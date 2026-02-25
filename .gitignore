@@ -1,0 +1,7 @@
+.env
+*.env
+.vs/
+bin/
+obj/
+*.user
+tailwindcss.exe

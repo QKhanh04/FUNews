@@ -1,0 +1,187 @@
+@model ViewModel.News.NewsReportViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "News Report";
+}
+
+<div class="space-y-8">
+    <!-- Breadcrumbs -->
+    <nav aria-label="Breadcrumb" class="flex text-sm font-medium text-slate-500 mb-6">
+        <ol class="flex items-center space-x-2">
+            <li><a asp-controller="Home" asp-action="Index" class="hover:text-primary transition-colors">Home</a></li>
+            <li><span class="material-symbols-outlined text-base">chevron_right</span></li>
+            <li class="text-slate-900 font-bold">@ViewData["Title"]</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="space-y-1">
+            <h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Periodical Statistics Report</h2>
+            <p class="text-slate-500 dark:text-slate-400 max-w-xl">
+                Analyze news publication trends and impact across selected time periods.
+            </p>
+        </div>
+    </div>
+
+    <!-- Statistics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-5">
+            <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <span class="material-symbols-outlined text-3xl">analytics</span>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-slate-500 text-nowrap">Total Articles</p>
+                <h3 class="text-2xl font-bold text-slate-900 dark:text-white">@Model.Stats.TotalArticles</h3>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-5">
+            <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                <span class="material-symbols-outlined text-3xl">check_circle</span>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-slate-500 text-nowrap">Active Content</p>
+                <h3 class="text-2xl font-bold text-slate-900 dark:text-white">@Model.Stats.ActiveArticles</h3>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-5">
+            <div class="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                <span class="material-symbols-outlined text-3xl">pending</span>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-slate-500 text-nowrap">Drafts</p>
+                <h3 class="text-2xl font-bold text-slate-900 dark:text-white">@Model.Stats.DraftArticles</h3>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-5">
+            <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                <span class="material-symbols-outlined text-3xl">category</span>
+            </div>
+            <div class="min-w-0">
+                <p class="text-sm font-medium text-slate-500 truncate">@(Model.Stats.TopCategory ?? "N/A")</p>
+                <h3 class="text-2xl font-bold text-slate-900 dark:text-white">@Model.Stats.TopCategoryCount</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Bar -->
+    <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+            <div class="md:col-span-2 relative">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Start Date</label>
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">calendar_today</span>
+                    <input type="date" name="startDate" value="@Model.StartDate?.ToString("yyyy-MM-dd")" 
+                           class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary/50 text-slate-900 dark:text-white text-sm" />
+                </div>
+            </div>
+            <div class="md:col-span-2 relative">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">End Date</label>
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">event</span>
+                    <input type="date" name="endDate" value="@Model.EndDate?.ToString("yyyy-MM-dd")" 
+                           class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary/50 text-slate-900 dark:text-white text-sm" />
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 bg-primary text-white font-bold py-2 rounded-lg hover:bg-primary/90 transition-colors text-sm">Generate</button>
+                <a asp-action="Report" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg hover:bg-slate-200 transition-colors flex items-center">
+                    <span class="material-symbols-outlined text-xl">restart_alt</span>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Report Table -->
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Published Article</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Category</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Author</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Created Date</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    @if (!Model.Articles.Any()) {
+                        <tr>
+                            <td colspan="5" class="px-6 py-20 text-center text-slate-400 font-medium">
+                                <span class="material-symbols-outlined text-4xl mb-2 block">folder_open</span>
+                                No articles found in this period.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var item in Model.Articles) {
+                        <tr class="hover:bg-slate-50/50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="size-12 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
+                                        @if (!string.IsNullOrEmpty(item.ThumbnailUrl)) {
+                                            <img src="@item.ThumbnailUrl" class="w-full h-full object-cover" />
+                                        } else {
+                                            <div class="w-full h-full flex items-center justify-center text-slate-400">
+                                                <span class="material-symbols-outlined">image</span>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">@item.NewsTitle</p>
+                                        <p class="text-xs text-slate-500 mt-0.5">ID: #@item.NewsArticleId</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs font-bold">@item.CategoryName</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-7 h-7 rounded bg-orange-100 text-orange-600 flex items-center justify-center text-[10px] font-bold">
+                                        @item.AuthorName?.Substring(0, 1).ToUpper()
+                                    </div>
+                                    <span class="text-sm text-slate-600 dark:text-slate-400 font-medium">@item.AuthorName</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                @if (item.NewsStatus == true) {
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Active
+                                    </span>
+                                } else {
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 text-xs font-bold">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Draft
+                                    </span>
+                                }
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <p class="text-sm font-bold text-slate-900 dark:text-white">@item.CreatedDate?.ToString("MMM dd, yyyy")</p>
+                                <p class="text-xs text-slate-500">@item.CreatedDate?.ToString("HH:mm tt")</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <p class="text-sm text-slate-500 font-medium">Showing @(((Model.PageNumber - 1) * Model.PageSize) + 1) to @(Math.Min(Model.PageNumber * Model.PageSize, Model.TotalCount)) of @Model.TotalCount results</p>
+            <div class="flex gap-2">
+                @if (Model.PageNumber > 1) {
+                    <a asp-action="Report" asp-route-pageNumber="@(Model.PageNumber - 1)" asp-route-startDate="@(Model.StartDate?.ToString("yyyy-MM-dd"))" asp-route-endDate="@(Model.EndDate?.ToString("yyyy-MM-dd"))" 
+                       class="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-sm text-slate-600 hover:bg-slate-50 transition-colors">Prev</a>
+                }
+                <button class="px-3 py-1 bg-primary text-white rounded font-bold text-sm">@Model.PageNumber</button>
+                @if (Model.PageNumber * Model.PageSize < Model.TotalCount) {
+                    <a asp-action="Report" asp-route-pageNumber="@(Model.PageNumber + 1)" asp-route-startDate="@(Model.StartDate?.ToString("yyyy-MM-dd"))" asp-route-endDate="@(Model.EndDate?.ToString("yyyy-MM-dd"))" 
+                       class="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-sm text-slate-600 hover:bg-slate-50 transition-colors">Next</a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,19 @@
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Common;
+using DataAccessObjects;
+using ViewModel.Category;
+
+namespace Service.Interface
+{
+    public interface ICategoryService
+    {
+        Task<IEnumerable<Category>> GetAllActiveCategories();
+        Task<IEnumerable<Category>> GetAllCategoriesAsync();
+        Task<CategoryManagementViewModel> GetCategoryManagementAsync(string? search, int pageNumber, int pageSize);
+        Task<Category?> GetCategoryByIdAsync(short id);
+        Task<ServiceResult<bool>> AddCategoryAsync(Category category);
+        Task<ServiceResult<bool>> UpdateCategoryAsync(Category category);
+        Task<ServiceResult<bool>> DeleteCategoryAsync(short id);
+    }
+}

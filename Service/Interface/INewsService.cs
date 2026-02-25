@@ -1,0 +1,50 @@
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using DataAccessObjects;
+using Common;
+using ViewModel.Home;
+using Microsoft.AspNetCore.Http;
+
+namespace Service.Interface
+{
+    public interface INewsService
+    {
+        Task<IEnumerable<NewsArticle>> GetAllNewsActive();
+
+        Task<CursorResult<NewsCardViewModel>> GetForHomeAsync(
+            string? search,
+            short? categoryId,
+            int? tagId,
+            int? cursor,
+            int pageSize);
+
+        Task<ViewModel.News.NewsHistoryViewModel> GetHistoryAsync(
+            short userId,
+            string? search,
+            short? categoryId,
+            DateTime? startDate,
+            DateTime? endDate,
+            int pageNumber,
+            int pageSize);
+
+        Task<ViewModel.News.NewsManagementViewModel> GetNewsManagementAsync(
+            short userId,
+            string role,
+            string? search,
+            short? categoryId,
+            bool? status,
+            int pageNumber,
+            int pageSize);
+
+        Task<ServiceResult<bool>> AddNewsAsync(NewsArticle article, List<int> selectedTagIds, string? newTags, Microsoft.AspNetCore.Http.IFormFile? imageFile);
+        Task<ServiceResult<bool>> UpdateNewsAsync(NewsArticle article, List<int> selectedTagIds, string? newTags, Microsoft.AspNetCore.Http.IFormFile? imageFile);
+        Task<ServiceResult<bool>> DeleteNewsAsync(int id);
+        
+        Task<ViewModel.News.NewsReportViewModel> GetReportAsync(
+            DateTime? startDate,
+            DateTime? endDate,
+            int pageNumber,
+            int pageSize);
+    }
+}
+

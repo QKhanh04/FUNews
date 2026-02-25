@@ -1,0 +1,17 @@
+﻿@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --color-primary: #f57a00;
+    --color-primary-hover: #e06b00;
+}
+
+a {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
+
+html {
+    font-size: 18px;
+}

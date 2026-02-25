@@ -1,0 +1,88 @@
+@model ViewModel.News.NewsHistoryViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Dashboard";
+    var userName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "User";
+}
+
+<!-- Breadcrumbs -->
+<nav aria-label="Breadcrumb" class="flex text-sm font-medium text-slate-500 mb-6">
+    <ol class="flex items-center space-x-2">
+        <li><a asp-controller="Home" asp-action="Index" class="hover:text-primary transition-colors">Home</a></li>
+        <li><span class="material-symbols-outlined text-base">chevron_right</span></li>
+        <li class="text-slate-900 font-bold">@ViewData["Title"]</li>
+    </ol>
+</nav>
+
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div>
+        <h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Management Dashboard</h2>
+        <p class="text-slate-500 mt-1">Quick overview of your activities and system status.</p>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-5">
+        <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+            <span class="material-symbols-outlined text-3xl">post_add</span>
+        </div>
+        <div>
+            <p class="text-sm font-medium text-slate-500">My Articles</p>
+            <h3 class="text-2xl font-bold text-slate-900 dark:text-white">@Model.Stats.TotalCreated</h3>
+            <p class="text-xs text-green-600 font-semibold mt-1">@(Model.Stats.GrowthRate >= 0 ? "+" : "")@Model.Stats.GrowthRate% this month</p>
+        </div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-5">
+        <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+            <span class="material-symbols-outlined text-3xl">category</span>
+        </div>
+        <div>
+            <p class="text-sm font-medium text-slate-500">Top Category</p>
+            <h3 class="text-2xl font-bold text-slate-900 dark:text-white">@(Model.Stats.MostFrequentCategory ?? "N/A")</h3>
+            <p class="text-xs text-slate-400 mt-1">@Model.Stats.MostFrequentCategoryCount articles</p>
+        </div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-5">
+        <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+            <span class="material-symbols-outlined text-3xl">query_stats</span>
+        </div>
+        <div>
+            <p class="text-sm font-medium text-slate-500">System Status</p>
+            <h3 class="text-2xl font-bold text-slate-900 dark:text-white">Healthy</h3>
+            <p class="text-xs text-slate-400 mt-1">All services operational</p>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Quick Actions</h3>
+        <div class="grid grid-cols-2 gap-4">
+            <a asp-action="Create" class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl hover:bg-primary/5 hover:text-primary transition-all group">
+                <span class="material-symbols-outlined text-3xl mb-2 text-slate-800 dark:text-slate-200">add_circle</span>
+                <p class="font-bold text-sm text-slate-900 dark:text-white">Create News</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Publish a new article</p>
+            </a>
+            <a asp-action="History" class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl hover:bg-primary/5 hover:text-primary transition-all group">
+                <span class="material-symbols-outlined text-3xl mb-2 text-slate-800 dark:text-slate-200">history</span>
+                <p class="font-bold text-sm text-slate-900 dark:text-white">View History</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Manage your past posts</p>
+            </a>
+        </div>
+    </div>
+    
+    <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Welcome back, @userName!</h3>
+        <p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">
+            Everything looks good today. You have published @Model.Stats.TotalCreated articles so far. 
+            Check your latest engagement stats or start writing a new story.
+        </p>
+        <div class="flex gap-3">
+             <a asp-controller="Account" asp-action="Profile" class="px-5 py-2 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold rounded-lg text-sm hover:bg-slate-200 transition-colors">My Profile</a>
+             <a asp-controller="Home" asp-action="Index" class="px-5 py-2 bg-primary text-white font-bold rounded-lg text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors">Go to Homepage</a>
+        </div>
+    </div>
+</div>

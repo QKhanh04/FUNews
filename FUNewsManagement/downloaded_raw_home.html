@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Home - FUNewsManagement</title>
+    <link rel="stylesheet" href="/css/site.css?v=ORuHKXOB5I_j69tIGlQQ5cw8GWM6GJsKAmOlsvHm1Qs" />
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=block" rel="stylesheet"/>
+    <!-- Material Symbols -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-25..0&display=block" rel="stylesheet"/>
+    <!-- Tailwind CSS -->
+    <link rel="stylesheet" href="/css/output.css?v=AFvVwp_78rOb1kFQ34QIR_istgjTNO9HMb34qnz0pa4" />
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        a { text-decoration: none; color: inherit; }
+
+        /* Toast animations */
+        @keyframes slideInRight {
+            from { transform: translateX(120%); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0);    opacity: 1; }
+            to   { transform: translateX(120%); opacity: 0; }
+        }
+        @keyframes progressShrink {
+            from { transform: scaleX(1); }
+            to   { transform: scaleX(0); }
+        }
+        .toast-enter  { animation: slideInRight  0.4s ease-out forwards; }
+        .toast-leave  { animation: slideOutRight 0.3s ease-in  forwards; }
+        .toast-progress-bar { animation: progressShrink 5s linear forwards; transform-origin: left; }
+    </style>
+    <script>
+        // Check local storage for dark mode preference
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+</head>
+<body class="text-slate-900 dark:text-slate-100 bg-[#f6f6f8] dark:bg-slate-900 antialiased transition-colors duration-200">
+<div b-30ljw1qqbs id="toastContainer" class="fixed top-20 right-5 z-[9999] flex flex-col gap-3 w-[360px] max-w-[calc(100vw-2rem)]"></div>
+
+<!-- ===== HEADER ===== -->
+<div b-30ljw1qqbs class="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md transition-colors duration-200">
+    <div b-30ljw1qqbs class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <header b-30ljw1qqbs class="flex items-center justify-between h-16">
+            <div b-30ljw1qqbs class="flex items-center gap-8">
+                <!-- Logo -->
+                <a class="flex items-center gap-2" href="/">
+                    <span b-30ljw1qqbs class="material-symbols-outlined text-3xl font-bold text-primary">newspaper</span>
+                    <h2 b-30ljw1qqbs class="text-slate-900 dark:text-white text-xl font-extrabold tracking-tight m-0">FUNews</h2>
+                </a>
+                <!-- Nav Links -->
+                <nav b-30ljw1qqbs class="hidden md:flex items-center gap-6">
+                    <a class="text-primary text-sm font-semibold border-b-2 border-primary pb-1" href="/">Home</a>
+                    <a b-30ljw1qqbs href="#" class="text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors">News Feed</a>
+
+
+                    <a class="text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors" href="/Home/Privacy">About</a>
+                </nav>
+            </div>
+
+            <div b-30ljw1qqbs class="flex items-center gap-3">
+                <!-- Search -->
+                <form method="get" action="/">
+                    <div b-30ljw1qqbs class="hidden sm:block relative">
+                        <div b-30ljw1qqbs class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span b-30ljw1qqbs class="material-symbols-outlined text-slate-400 text-sm">search</span>
+                        </div>
+                        <input b-30ljw1qqbs name="search"
+                               class="block w-56 pl-10 pr-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-sm placeholder-slate-500 focus:outline-none border-none transition-all"
+                               placeholder="Search articles..." type="text"/>
+                    </div>
+                </form>
+
+                        <!-- Not logged in: show Login button -->
+                        <a class="bg-primary hover:bg-primary-hover text-white px-5 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm" href="/Account/Login">
+                            Login
+                        </a>
+
+                    <!-- Theme Toggle -->
+                    <button b-30ljw1qqbs type="button" id="theme-toggle" class="text-slate-400 hover:text-primary dark:hover:text-primary transition-colors flex items-center justify-center p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800" title="Toggle Dark/Light Mode">
+                        <span b-30ljw1qqbs id="theme-toggle-dark-icon" class="hidden material-symbols-outlined text-[20px]">dark_mode</span>
+                        <span b-30ljw1qqbs id="theme-toggle-light-icon" class="hidden material-symbols-outlined text-[20px]">light_mode</span>
+                    </button>
+            </div>
+        </header>
+    </div>
+</div>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div b-30ljw1qqbs class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main b-30ljw1qqbs role="main" class="pb-3">
+            
+<!-- ── FEATURED ARTICLE ─────────────────────────────────────────── -->
+        <section class="mb-12">
+            <div class="relative group cursor-pointer overflow-hidden rounded-xl bg-white shadow-sm border border-slate-200 transition-all hover:shadow-xl flex flex-col lg:flex-row lg:h-[350px]">
+                <div class="lg:w-1/2 overflow-hidden bg-slate-100">
+                            <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                 src="https://res.cloudinary.com/dy2z2wtqj/image/upload/v1771867058/fu-news-v2/yxhfuoglstffrjsdt2zq.jpg" alt="test" />
+                </div>
+                <div class="lg:w-1/2 p-6 md:p-8 flex flex-col justify-center">
+                    <span class="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-black uppercase tracking-wider mb-3">
+                    Academic news
+                    </span>
+                    <h1 class="text-2xl font-black text-slate-900 leading-tight mb-3 group-hover:text-primary transition-colors line-clamp-2">
+                    test
+                    </h1>
+                    <p class="text-slate-500 text-base mb-5 leading-relaxed line-clamp-3">
+                    sdfsdf
+                    </p>
+                    <div class="flex items-center justify-between mt-auto">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-slate-400 text-sm">schedule</span>
+                            <span class="text-slate-500 text-[13px] font-medium">
+                            Feb 23, 2026 • 1 min read
+                            </span>
+                        </div>
+                        <a style="color: #f57a00 !important;" class="flex items-center gap-1.5 text-primary text-sm font-black hover:underline group/link" href="/News/Detail/49">
+                            Read More
+                            <span class="material-symbols-outlined text-lg group-hover/link:translate-x-1.5 transition-transform">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+<!-- ── SEARCH BAR (mobile) ──────────────────────────────────────── -->
+<form method="get" class="mb-6 sm:hidden" action="/">
+    <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <span class="material-symbols-outlined text-slate-400">search</span>
+        </div>
+        <input name="search"
+               class="block w-full pl-10 pr-3 py-2 border border-slate-200 bg-white rounded-lg text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary"
+               placeholder="Search articles..." type="text"/>
+    </div>
+</form>
+
+<div class="flex flex-col lg:flex-row gap-8 lg:gap-12 pb-16">
+    <!-- ── SIDEBAR (Categories) ──────────────────────────────────────── -->
+    <aside class="w-full lg:w-1/4 flex-shrink-0">
+        <div class="sticky top-24 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <!-- Sidebar Header & Toggle -->
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wider">
+                    <span class="material-symbols-outlined text-primary text-[1.2rem]">auto_stories</span>
+                    Categories
+                </h3>
+                
+            </div>
+
+            <!-- Sidebar Content (Tree) -->
+            <div class="p-3 max-h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar">
+                
+                <!-- "All Stories" Option -->
+                <a class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors mb-2
+                          bg-primary text-white shadow-sm" href="/">
+                    <span class="material-symbols-outlined text-[1.1rem] mr-2.5 text-white">home</span>
+                    All Stories
+                </a>
+                
+                <div class="space-y-0.5">
+                    <div class="p-3 bg-red-100 text-red-800">DEBUG: CategoryTree Count is 0</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ── MAIN CONTENT ──────────────────────────────────────────────── -->
+    <main class="w-full lg:w-3/4 flex-grow">
+        
+        <!-- Breadcrumbs & Status -->
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-4">
+            <div class="flex-1">
+                    <h2 class="text-2xl font-black text-slate-900 tracking-tight">Latest Stories</h2>
+
+            </div>
+            
+            <div class="flex items-center gap-2 text-sm text-slate-500 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">
+                <span class="material-symbols-outlined text-[18px] text-primary">view_list</span>
+                <span><strong class="text-slate-900">6</strong> articles</span>
+            </div>
+        </div>
+
+<!-- ── NEWS GRID ─────────────────────────────────────────────────── -->
+<div id="news-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    
+        <article class="flex flex-col bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-md transition-shadow group">
+            <div class="relative aspect-video overflow-hidden bg-slate-100">
+                        <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                             src="https://res.cloudinary.com/dy2z2wtqj/image/upload/v1771869957/fu-news-v2/ltnlibk9gxwzfxwyequm.jpg"
+                             alt="sdfsdf" />
+                        <div class="absolute top-3 left-3">
+                            <span class="px-2 py-1 bg-slate-900/60 backdrop-blur-md text-white text-[10px] font-bold uppercase rounded">
+                        Academic news
+                            </span>
+                        </div>
+            </div>
+            <div class="p-5 flex flex-col grow">
+                <h3 class="text-xl font-bold text-slate-900 mb-2 leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                sdfsdf
+                </h3>
+                <p class="text-slate-600 text-sm line-clamp-3 mb-4">
+                sdfsdfsdf
+                </p>
+                <div class="mt-auto flex items-center justify-between pt-4">
+                    <span class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                    Feb 23, 2026
+                    </span>
+                    <a style="color: #f57a00 !important;" class="text-primary text-[13px] font-black flex items-center gap-1 hover:underline group/link" href="/News/Detail/48">
+                        Read More
+                        <span class="material-symbols-outlined text-[18px] group-hover/link:translate-x-1 transition-transform">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+        </article>
+        <article class="flex flex-col bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-md transition-shadow group">
+            <div class="relative aspect-video overflow-hidden bg-slate-100">
+                        <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                             src="https://res.cloudinary.com/dy2z2wtqj/image/upload/v1771861794/fu-news-v2/lbslhqehafk0iyncbwfm.png"
+                             alt="Khanh abc" />
+                        <div class="absolute top-3 left-3">
+                            <span class="px-2 py-1 bg-slate-900/60 backdrop-blur-md text-white text-[10px] font-bold uppercase rounded">
+                        Academic news
+                            </span>
+                        </div>
+            </div>
+            <div class="p-5 flex flex-col grow">
+                <h3 class="text-xl font-bold text-slate-900 mb-2 leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                Khanh abc
+                </h3>
+                <p class="text-slate-600 text-sm line-clamp-3 mb-4">
+                Kabc
+                </p>
+                <div class="mt-auto flex items-center justify-between pt-4">
+                    <span class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                    Feb 23, 2026
+                    </span>
+                    <a style="color: #f57a00 !important;" class="text-primary text-[13px] font-black flex items-center gap-1 hover:underline group/link" href="/News/Detail/47">
+                        Read More
+                        <span class="material-symbols-outlined text-[18px] group-hover/link:translate-x-1 transition-transform">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+        </article>
+        <article class="flex flex-col bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-md transition-shadow group">
+            <div class="relative aspect-video overflow-hidden bg-slate-100">
+                        <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                             src="https://res.cloudinary.com/dy2z2wtqj/image/upload/v1771861792/fu-news-v2/utautpcq8k6nvwbmcpwu.png"
+                             alt="Khanh abc" />
+                        <div class="absolute top-3 left-3">
+                            <span class="px-2 py-1 bg-slate-900/60 backdrop-blur-md text-white text-[10px] font-bold uppercase rounded">
+                        Academic news
+                            </span>
+                        </div>
+            </div>
+            <div class="p-5 flex flex-col grow">
+                <h3 class="text-xl font-bold text-slate-900 mb-2 leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                Khanh abc
+                </h3>
+                <p class="text-slate-600 text-sm line-clamp-3 mb-4">
+                Kabc
+                </p>
+                <div class="mt-auto flex items-center justify-between pt-4">
+                    <span class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                    Feb 23, 2026
+                    </span>
+                    <a style="color: #f57a00 !important;" class="text-primary text-[13px] font-black flex items-center gap-1 hover:underline group/link" href="/News/Detail/46">
+                        Read More
+                        <span class="material-symbols-outlined text-[18px] group-hover/link:translate-x-1 transition-transform">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+        </article>
+        <article class="flex flex-col bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-md transition-shadow group">
+            <div class="relative aspect-video overflow-hidden bg-slate-100">
+                        <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                             src="https://res.cloudinary.com/dy2z2wtqj/image/upload/v1771693269/alumni_mobile1.png_i2m3lu.webp"
+                             alt="scsdc" />
+                        <div class="absolute top-3 left-3">
+                            <span class="px-2 py-1 bg-slate-900/60 backdrop-blur-md text-white text-[10px] font-bold uppercase rounded">
+                        Student Affairs
+                            </span>
+                        </div>
+            </div>
+            <div class="p-5 flex flex-col grow">
+                <h3 class="text-xl font-bold text-slate-900 mb-2 leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                scsdc
+                </h3>
+                <p class="text-slate-600 text-sm line-clamp-3 mb-4">
+                scsdc
+                </p>
+                <div class="mt-auto flex items-center justify-between pt-4">
+                    <span class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                    Feb 23, 2026
+                    </span>
+                    <a style="color: #f57a00 !important;" class="text-primary text-[13px] font-black flex items-center gap-1 hover:underline group/link" href="/News/Detail/40">
+                        Read More
+                        <span class="material-symbols-outlined text-[18px] group-hover/link:translate-x-1 transition-transform">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+        </article>
+        <article class="flex flex-col bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-md transition-shadow group">
+            <div class="relative aspect-video overflow-hidden bg-slate-100">
+                        <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                             src="https://res.cloudinary.com/dy2z2wtqj/image/upload/v1771818761/fu-news-v2/isufas7qzcubkxj9t634.jpg"
+                             alt="abc" />
+                        <div class="absolute top-3 left-3">
+                            <span class="px-2 py-1 bg-slate-900/60 backdrop-blur-md text-white text-[10px] font-bold uppercase rounded">
+                        Academic news
+                            </span>
+                        </div>
+            </div>
+            <div class="p-5 flex flex-col grow">
+                <h3 class="text-xl font-bold text-slate-900 mb-2 leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                abc
+                </h3>
+                <p class="text-slate-600 text-sm line-clamp-3 mb-4">
+                sdfsdf
+                </p>
+                <div class="mt-auto flex items-center justify-between pt-4">
+                    <span class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                    Feb 23, 2026
+                    </span>
+                    <a style="color: #f57a00 !important;" class="text-primary text-[13px] font-black flex items-center gap-1 hover:underline group/link" href="/News/Detail/39">
+                        Read More
+                        <span class="material-symbols-outlined text-[18px] group-hover/link:translate-x-1 transition-transform">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+        </article>
+        <article class="flex flex-col bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-md transition-shadow group">
+            <div class="relative aspect-video overflow-hidden bg-slate-100">
+                        <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                             src="https://res.cloudinary.com/dy2z2wtqj/image/upload/v1771814811/fu-news-v2/knxuqspfi7sn90xqlp8e.jpg"
+                             alt="sdfsdfsdfsdf" />
+                        <div class="absolute top-3 left-3">
+                            <span class="px-2 py-1 bg-slate-900/60 backdrop-blur-md text-white text-[10px] font-bold uppercase rounded">
+                        Campus Safety
+                            </span>
+                        </div>
+            </div>
+            <div class="p-5 flex flex-col grow">
+                <h3 class="text-xl font-bold text-slate-900 mb-2 leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                sdfsdfsdfsdf
+                </h3>
+                <p class="text-slate-600 text-sm line-clamp-3 mb-4">
+                sfsdfsdfsdfsdf
+                </p>
+                <div class="mt-auto flex items-center justify-between pt-4">
+                    <span class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                    Feb 22, 2026
+                    </span>
+                    <a style="color: #f57a00 !important;" class="text-primary text-[13px] font-black flex items-center gap-1 hover:underline group/link" href="/News/Detail/26">
+                        Read More
+                        <span class="material-symbols-outlined text-[18px] group-hover/link:translate-x-1 transition-transform">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+        </article>
+
+</div>
+
+<!-- ── LOAD MORE ─────────────────────────────────────────────────── -->
+<div id="load-more-section" class="mt-16 flex flex-col items-center gap-4"
+     data-has-more="true"
+     data-next-cursor="26"
+     data-search=""
+     data-category-id=""
+     data-tag-id="">
+
+            <button id="load-more-btn"
+                    onclick="loadMore()"
+                    class="px-8 py-3 bg-white text-slate-900 border border-slate-200 rounded-lg font-bold hover:bg-slate-50 transition-all flex items-center gap-2">
+                Show More Articles
+                <span class="material-symbols-outlined">expand_more</span>
+            </button>
+
+    <p class="text-slate-500 text-sm italic">
+        Showing 6 articles
+• more available    </p>
+</div>
+
+    </main>
+</div>
+
+
+    </main>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer b-30ljw1qqbs class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 mt-20 py-12 transition-colors duration-200">
+    <div b-30ljw1qqbs class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div b-30ljw1qqbs class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div b-30ljw1qqbs class="col-span-1 md:col-span-2">
+                <div b-30ljw1qqbs class="flex items-center gap-2 mb-4">
+                    <span b-30ljw1qqbs class="material-symbols-outlined text-2xl font-bold text-primary">newspaper</span>
+                    <h2 b-30ljw1qqbs class="text-slate-900 dark:text-white text-lg font-extrabold tracking-tight m-0">FUNews</h2>
+                </div>
+                <p b-30ljw1qqbs class="text-slate-500 dark:text-slate-400 max-w-sm text-sm">
+                    The official news and management system of the University. Empowering students and faculty with the latest information and research updates.
+                </p>
+            </div>
+            <div b-30ljw1qqbs>
+                <h4 b-30ljw1qqbs class="text-slate-900 dark:text-white font-bold mb-4 uppercase text-xs tracking-widest">Quick Links</h4>
+                <ul b-30ljw1qqbs class="space-y-2 list-none p-0 m-0">
+                    <li b-30ljw1qqbs><a b-30ljw1qqbs href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">University Home</a></li>
+                    <li b-30ljw1qqbs><a b-30ljw1qqbs href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Academic Calendar</a></li>
+                    <li b-30ljw1qqbs><a b-30ljw1qqbs href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Staff Directory</a></li>
+                    <li b-30ljw1qqbs><a b-30ljw1qqbs href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Student Portal</a></li>
+                </ul>
+            </div>
+            <div b-30ljw1qqbs>
+                <h4 b-30ljw1qqbs class="text-slate-900 dark:text-white font-bold mb-4 uppercase text-xs tracking-widest">Connect</h4>
+                <div b-30ljw1qqbs class="flex gap-4 mb-4">
+                    <a b-30ljw1qqbs href="#" class="text-slate-400 dark:text-slate-500 hover:text-primary dark:hover:text-primary transition-colors"><span b-30ljw1qqbs class="material-symbols-outlined">public</span></a>
+                    <a b-30ljw1qqbs href="#" class="text-slate-400 dark:text-slate-500 hover:text-primary dark:hover:text-primary transition-colors"><span b-30ljw1qqbs class="material-symbols-outlined">mail</span></a>
+                    <a b-30ljw1qqbs href="#" class="text-slate-400 dark:text-slate-500 hover:text-primary dark:hover:text-primary transition-colors"><span b-30ljw1qqbs class="material-symbols-outlined">share</span></a>
+                </div>
+                <p b-30ljw1qqbs class="text-slate-500 dark:text-slate-400 text-sm">
+                    For press inquiries:<br b-30ljw1qqbs/>
+                    <span b-30ljw1qqbs class="font-medium text-slate-700 dark:text-slate-300">press@university.edu</span>
+                </p>
+            </div>
+        </div>
+        <div b-30ljw1qqbs class="mt-12 pt-8 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p b-30ljw1qqbs class="text-slate-400 dark:text-slate-500 text-xs m-0">© 2026 FUNews Management System. All rights reserved.</p>
+            <div b-30ljw1qqbs class="flex gap-6">
+                <a class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-xs" href="/Home/Privacy">Privacy Policy</a>
+                <a b-30ljw1qqbs href="#" class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-xs">Terms of Service</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="/lib/jquery/dist/jquery.min.js"></script>
+<script src="/js/site.js?v=hRQyftXiu1lLX2P9Ly9xa4gHJgLeR1uGN5qegUobtGo"></script>
+
+<script>
+    // ── User Dropdown ───────────────────────────────────────────
+    function toggleUserMenu() {
+        const dropdown = document.getElementById('userDropdown');
+        const chevron  = document.getElementById('chevronIcon');
+        const isOpen   = !dropdown.classList.contains('hidden');
+        dropdown.classList.toggle('hidden');
+        chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+    document.addEventListener('click', function (e) {
+        const menu = document.getElementById('userMenu');
+        if (menu && !menu.contains(e.target)) {
+            document.getElementById('userDropdown')?.classList.add('hidden');
+            const chevron = document.getElementById('chevronIcon');
+            if (chevron) chevron.style.transform = 'rotate(0deg)';
+        }
+    });
+
+    // ── Toast System (Tailwind) ─────────────────────────────────
+    const toastConfig = {
+        success: {
+            bar:   'bg-green-500',
+            icon:  'bg-gradient-to-br from-green-400 to-green-600',
+            title: 'text-green-700',
+            border:'border-l-green-500',
+            label: 'Success!',
+            symbol:'check_circle'
+        },
+        warning: {
+            bar:   'bg-amber-400',
+            icon:  'bg-gradient-to-br from-amber-300 to-amber-500',
+            title: 'text-amber-700',
+            border:'border-l-amber-400',
+            label: 'Warning!',
+            symbol:'warning'
+        },
+        danger: {
+            bar:   'bg-red-500',
+            icon:  'bg-gradient-to-br from-red-400 to-red-600',
+            title: 'text-red-700',
+            border:'border-l-red-500',
+            label: 'Error!',
+            symbol:'cancel'
+        },
+        info: {
+            bar:   'bg-blue-500',
+            icon:  'bg-gradient-to-br from-blue-400 to-blue-600',
+            title: 'text-blue-700',
+            border:'border-l-blue-500',
+            label: 'Infomation',
+            symbol:'info'
+        }
+    };
+
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const cfg = toastConfig[type] || toastConfig.info;
+
+        const toast = document.createElement('div');
+        toast.className = `toast-enter relative flex items-start gap-3 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 border-l-4 ${cfg.border} p-4 overflow-hidden`;
+
+        toast.innerHTML = `
+            <div class="w-9 h-9 rounded-full ${cfg.icon} flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">${cfg.symbol}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold ${cfg.title} dark:text-slate-100">${cfg.label}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">${message}</p>
+            </div>
+            <button onclick="closeToast(this)" class="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                <span class="material-symbols-outlined text-base">close</span>
+            </button>
+            <div class="toast-progress-bar absolute bottom-0 left-0 h-[3px] w-full ${cfg.bar} rounded-full"></div>
+        `;
+
+        container.appendChild(toast);
+
+        // Auto close after 5s
+        const timer = setTimeout(() => closeToast(toast.querySelector('button')), 5000);
+        toast._timer = timer;
+    }
+
+    function closeToast(btn) {
+        const toast = btn.closest ? btn.closest('[class*="toast-enter"]') ?? btn : btn;
+        if (toast._timer) clearTimeout(toast._timer);
+        toast.classList.remove('toast-enter');
+        toast.classList.add('toast-leave');
+        setTimeout(() => toast.remove(), 300);
+    }
+
+
+    // ── Theme Toggle Logic ──────────────────────────────────────
+    document.addEventListener("DOMContentLoaded", function () {
+        var themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        var themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
+        // Change the icons inside the button based on previous settings
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            themeToggleLightIcon.classList.remove('hidden');
+        } else {
+            themeToggleDarkIcon.classList.remove('hidden');
+        }
+
+        var themeToggleBtn = document.getElementById('theme-toggle');
+
+        themeToggleBtn.addEventListener('click', function() {
+            // toggle icons inside button
+            themeToggleDarkIcon.classList.toggle('hidden');
+            themeToggleLightIcon.classList.toggle('hidden');
+
+            // if set via local storage previously
+            if (localStorage.getItem('theme')) {
+                if (localStorage.getItem('theme') === 'light') {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                }
+            // if NOT set via local storage previously
+            } else {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                }
+            }
+        });
+    });
+</script>
+
+    
+        <script>
+            async function loadMore() {
+                const section = document.getElementById('load-more-section');
+                const btn = document.getElementById('load-more-btn');
+
+                const cursor = section.dataset.nextCursor;
+                const search = section.dataset.search || '';
+                const categoryId = section.dataset.categoryId || '';
+                const tagId = section.dataset.tagId || '';
+
+                // Show loading state
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-symbols-outlined animate-spin">autorenew</span> Loading...';
+
+                const params = new URLSearchParams();
+                if (cursor) params.append('cursor', cursor);
+                if (search) params.append('search', search);
+                if (categoryId) params.append('categoryId', categoryId);
+                if (tagId) params.append('tagId', tagId);
+                params.append('incSubs', 'true');
+
+                const response = await fetch(`/Home/LoadMore?${params.toString()}`);
+                const html = await response.text();
+
+                // Append new cards
+                document.getElementById('news-grid').insertAdjacentHTML('beforeend', html);
+
+                // Update cursor from response header or re-fetch state
+                // Simple approach: hide button if no more
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const cards = doc.querySelectorAll('article');
+
+                if (cards.length < 6) {
+                    btn.remove();
+                    section.querySelector('p').textContent = 'All articles loaded';
+                } else {
+                    // Update cursor - we need the last article id
+                    // The partial view returns articles, last one has data we need
+                    // Re-enable button
+                    btn.disabled = false;
+                    btn.innerHTML = 'Show More Articles <span class="material-symbols-outlined">expand_more</span>';
+
+                    // Get next cursor from last article link
+                    const allArticles = document.querySelectorAll('#news-grid article');
+                    const lastLink = allArticles[allArticles.length - 1]?.querySelector('a[href*="Detail"]');
+                    if (lastLink) {
+                        const match = lastLink.href.match(/\/(\d+)$/);
+                        if (match) section.dataset.nextCursor = match[1];
+                    }
+                }
+            }
+        </script>
+
+</body>
+</html>
