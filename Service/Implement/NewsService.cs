@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,6 +10,8 @@ using ViewModel.Home;
 using Microsoft.EntityFrameworkCore;
 using ViewModel.News;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
+using Service.Hubs;
 
 namespace Service.Implement
 {
@@ -20,19 +22,22 @@ namespace Service.Implement
         private readonly ICategoryRepository _categoryRepository;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IHubContext<NewsHub> _hubContext;
 
         public NewsService(
             INewsRepository newsRepository, 
             ITagRepository tagRepository,
             ICategoryRepository categoryRepository,
             ICloudinaryService cloudinaryService,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IHubContext<NewsHub> hubContext)
         {
             _newsRepository = newsRepository;
             _tagRepository = tagRepository;
             _categoryRepository = categoryRepository;
             _cloudinaryService = cloudinaryService;
             _unitOfWork = unitOfWork;
+            _hubContext = hubContext;
         }
 
         // ── Raw helper ──────────────────────────────────────────────────────
@@ -178,7 +183,7 @@ namespace Service.Implement
             };
         }
 
-        public async Task<ServiceResult<bool>> AddNewsAsync(NewsArticle article, List<int> selectedTagIds, string? newTags, IFormFile? imageFile)
+        public async Task<ServiceResult<bool>> AddNewsAsync(NewsArticle article, List<int> selectedTagIds, string? newTags, IFormFile? imageFile, string? userRole)
         {
             try
             {
@@ -254,8 +259,15 @@ namespace Service.Implement
                 if (article.CreatedById == 0) article.CreatedById = null;
                 if (article.UpdatedById == 0) article.UpdatedById = null;
 
+                // Approval Workflow enforce: If user is Staff (Role "1"), force status to false (Pending)
+                if (userRole == "1")
+                {
+                    article.NewsStatus = false;
+                }
+
                 await _newsRepository.AddAsync(article);
                 await _unitOfWork.SaveChangesAsync();
+                await _hubContext.Clients.All.SendAsync("UpdateNews", "Create", userRole ?? "System", article.NewsTitle);
                 return ServiceResult<bool>.Ok(true, "News article created successfully.");
             }
             catch (Exception ex)
@@ -266,7 +278,7 @@ namespace Service.Implement
             }
         }
 
-        public async Task<ServiceResult<bool>> UpdateNewsAsync(NewsArticle article, List<int> selectedTagIds, string? newTags, IFormFile? imageFile)
+        public async Task<ServiceResult<bool>> UpdateNewsAsync(NewsArticle article, List<int> selectedTagIds, string? newTags, IFormFile? imageFile, string? userRole)
         {
             try
             {
@@ -302,8 +314,18 @@ namespace Service.Implement
                 existing.Headline = article.Headline;
                 existing.NewsContent = article.NewsContent;
                 existing.CategoryId = article.CategoryId;
-                existing.NewsStatus = article.NewsStatus;
                 existing.ModifiedDate = DateTime.UtcNow;
+                
+                // Approval Workflow enforce: If user is Staff (Role "1"), force status to false (Pending)
+                // If it is already true from previous, meaning Admin published it then Staff edit it, it should go back to Pending
+                if (userRole == "1")
+                {
+                    existing.NewsStatus = false;
+                }
+                else
+                {
+                    existing.NewsStatus = article.NewsStatus;
+                }
                 
                 // Track who updated it
                 existing.UpdatedById = article.UpdatedById == 0 ? null : article.UpdatedById;
@@ -347,6 +369,7 @@ namespace Service.Implement
 
                 _newsRepository.Update(existing);
                 await _unitOfWork.SaveChangesAsync();
+                await _hubContext.Clients.All.SendAsync("UpdateNews", "Update", userRole ?? "System", article.NewsTitle);
                 return ServiceResult<bool>.Ok(true, "News article updated successfully.");
             }
             catch (Exception ex)
@@ -374,11 +397,33 @@ namespace Service.Implement
 
                 _newsRepository.Remove(existing);
                 await _unitOfWork.SaveChangesAsync();
+                await _hubContext.Clients.All.SendAsync("UpdateNews", "Delete", "System", existing.NewsTitle);
                 return ServiceResult<bool>.Ok(true, "News article deleted successfully.");
             }
             catch (Exception ex)
             {
                 return ServiceResult<bool>.Fail("Delete Error: " + ex.Message);
+            }
+        }
+
+        public async Task<ServiceResult<bool>> ApproveNewsAsync(int id)
+        {
+            try
+            {
+                var existing = await _newsRepository.GetByIdAsync(id);
+                
+                if (existing == null) return ServiceResult<bool>.Fail("Article not found.");
+
+                existing.NewsStatus = true;
+                _newsRepository.Update(existing);
+                await _unitOfWork.SaveChangesAsync();
+                
+                await _hubContext.Clients.All.SendAsync("UpdateNews", "Approve", "System", existing.NewsTitle);
+                return ServiceResult<bool>.Ok(true, "News article approved successfully.");
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult<bool>.Fail("Approve Error: " + ex.Message);
             }
         }
 

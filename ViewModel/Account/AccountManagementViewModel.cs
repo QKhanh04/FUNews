@@ -23,6 +23,7 @@ namespace ViewModel.Account
         public int? Role { get; set; } 
         public string? RoleName { get; set; }
         public DateTime? CreatedAt { get; set; }
+        public int CreatedNewsCount { get; set; }
     }
 
     public class AccountStatsViewModel

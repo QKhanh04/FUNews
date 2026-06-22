@@ -31,10 +31,14 @@ namespace Service.Implement
             var adminEmail = _config["AdminAccount:Email"]; 
             var adminPassword = _config["AdminAccount:Password"];
 
-            if (email == adminEmail && password == adminPassword)
+            if (!string.IsNullOrWhiteSpace(adminEmail)
+                && !string.IsNullOrWhiteSpace(adminPassword)
+                && string.Equals(email, adminEmail, StringComparison.OrdinalIgnoreCase)
+                && password == adminPassword)
             {
                 var admin = new SystemAccount
                 {
+                    AccountId = 0,
                     AccountEmail = adminEmail,
                     AccountName = "Administrator",
                     AccountRole = (int)AccountRole.Admin
@@ -100,6 +104,21 @@ namespace Service.Implement
         }
         public async Task<ServiceResult<SystemAccount>> GetAccountById(short id)
         {
+            if (id == 0)
+            {
+                var adminEmail = _config["AdminAccount:Email"];
+                if (!string.IsNullOrWhiteSpace(adminEmail))
+                {
+                    return ServiceResult<SystemAccount>.Ok(new SystemAccount
+                    {
+                        AccountId = 0,
+                        AccountName = "Administrator",
+                        AccountEmail = adminEmail,
+                        AccountRole = (int)AccountRole.Admin
+                    });
+                }
+            }
+
             var account = await _accountRepository.GetByIdAsync(id);
             if (account == null)
                 return ServiceResult<SystemAccount>.Fail("Account not found.");
@@ -108,9 +127,23 @@ namespace Service.Implement
 
         public async Task<ServiceResult<bool>> UpdateAccount(SystemAccount account, short currentUserId)
         {
+            if (account.AccountId == 0)
+            {
+                return ServiceResult<bool>.Fail("The configured administrator account cannot be edited from the database.");
+            }
+
             var existing = await _accountRepository.GetByIdAsync(account.AccountId);
             if (existing == null)
                 return ServiceResult<bool>.Fail("Account not found.");
+
+            if (!string.IsNullOrWhiteSpace(account.AccountEmail))
+            {
+                var duplicated = await _accountRepository.GetUserByEmail(account.AccountEmail);
+                if (duplicated != null && duplicated.AccountId != account.AccountId)
+                {
+                    return ServiceResult<bool>.Fail("An account with this email already exists.");
+                }
+            }
 
             // ADMIN RESTRICTIONS:
             // 1. Cannot change role to Admin (0) if not self or specifically allowed (user said only staff/lecturer)
@@ -157,6 +190,9 @@ namespace Service.Implement
 
         public async Task<ServiceResult<bool>> ChangePassword(short accountId, string oldPassword, string newPassword)
         {
+            if (accountId == 0)
+                return ServiceResult<bool>.Fail("The configured administrator password must be changed in appsettings.json.");
+
             var account = await _accountRepository.GetByIdAsync(accountId);
             if (account == null)
                 return ServiceResult<bool>.Fail("Account not found.");
@@ -190,6 +226,7 @@ namespace Service.Implement
             var totalCount = await query.CountAsync();
             
             var items = await query
+                .Include(a => a.NewsArticles)
                 .OrderByDescending(a => a.CreatedAt)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
@@ -201,7 +238,8 @@ namespace Service.Implement
                     Role = a.AccountRole,
                     RoleName = a.AccountRole == (int)AccountRole.Admin ? "Administrator" : 
                                a.AccountRole == (int)AccountRole.Staff ? "Staff" : "Lecturer",
-                    CreatedAt = a.CreatedAt
+                    CreatedAt = a.CreatedAt,
+                    CreatedNewsCount = a.NewsArticles.Count
                 })
                 .ToListAsync();
 
@@ -231,6 +269,14 @@ namespace Service.Implement
         {
             try
             {
+                account.AccountEmail = account.AccountEmail?.Trim();
+                account.AccountName = account.AccountName?.Trim();
+
+                if (string.IsNullOrWhiteSpace(account.AccountEmail))
+                {
+                    return ServiceResult<bool>.Fail("Email is required.");
+                }
+
                 // Unique Email Check
                 var existing = await _accountRepository.GetUserByEmail(account.AccountEmail);
                 if (existing != null)
@@ -259,8 +305,19 @@ namespace Service.Implement
         {
             try
             {
-                var account = await _accountRepository.GetByIdAsync(id);
+                if (id == 0)
+                    return ServiceResult<bool>.Fail("The configured administrator account cannot be deleted.");
+
+                var account = await _accountRepository.GetAllAsQueryable()
+                    .Include(a => a.NewsArticles)
+                    .FirstOrDefaultAsync(a => a.AccountId == id);
+
                 if (account == null) return ServiceResult<bool>.Fail("Account not found.");
+
+                if (account.NewsArticles.Any())
+                {
+                    return ServiceResult<bool>.Fail("Cannot delete this account because it has created news articles.");
+                }
                 
                 _accountRepository.Remove(account);
                 await _unitOfWork.SaveChangesAsync();

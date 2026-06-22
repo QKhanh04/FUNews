@@ -1,0 +1,285 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home";
+}
+
+<!-- ── FEATURED ARTICLE ─────────────────────────────────────────── -->
+@if (Model.VM.FeaturedArticle != null)
+{
+    var f = Model.VM.FeaturedArticle;
+        <section class="mb-12">
+            <div class="relative group cursor-pointer overflow-hidden rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 transition-all hover:shadow-xl flex flex-col lg:flex-row lg:h-[350px]">
+                <div class="lg:w-1/2 overflow-hidden bg-slate-100 dark:bg-slate-800/50">
+                @if (!string.IsNullOrWhiteSpace(f.ThumbnailUrl))
+                {
+                            <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                 src="@f.ThumbnailUrl" alt="@f.NewsTitle" />
+                }
+                else
+                {
+                            <div class="w-full h-full min-h-[250px] flex items-center justify-center bg-slate-200 dark:bg-slate-700">
+                                <span class="material-symbols-outlined text-6xl text-slate-400">newspaper</span>
+                            </div>
+                }
+                </div>
+                <div class="lg:w-1/2 p-6 md:p-8 flex flex-col justify-center">
+                    <span class="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-black uppercase tracking-wider mb-3">
+                    @(f.CategoryName ?? "Featured Story")
+                    </span>
+                    <h1 class="text-2xl font-black text-slate-900 dark:text-white leading-tight mb-3 group-hover:text-primary transition-colors line-clamp-2">
+                    @f.NewsTitle
+                    </h1>
+                    <p class="text-slate-500 dark:text-slate-400 text-base mb-5 leading-relaxed line-clamp-3">
+                    @f.Headline
+                    </p>
+                    <div class="flex items-center justify-between mt-auto">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-slate-400 text-sm">schedule</span>
+                            <span class="text-slate-500 text-[13px] font-medium">
+                            @(f.CreatedDate?.ToString("MMM dd, yyyy") ?? "") • @f.ReadingMinutes min read
+                            </span>
+                        </div>
+                        <a asp-page="/News/Detail" asp-route-id="@f.NewsArticleId"
+                           style="color: #f57a00 !important;"
+                           class="flex items-center gap-1.5 text-primary text-sm font-black hover:underline group/link">
+                            Read More
+                            <span class="material-symbols-outlined text-lg group-hover/link:translate-x-1.5 transition-transform">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+}
+
+<div class="flex flex-col lg:flex-row gap-8 mt-8">
+    <aside class="w-full lg:w-72 shrink-0 space-y-6">
+        @await Component.InvokeAsync("CategorySidebar", new { activeCategoryId = Model.VM.SelectedCategoryId })
+        
+        <div class="bg-primary/5 rounded-xl border border-primary/20 p-4">
+            <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined text-primary mt-0.5">info</span>
+                <div class="text-sm">
+                    <p class="font-bold text-slate-900 dark:text-slate-100 mb-1">Navigation</p>
+                    <p class="text-slate-600 dark:text-slate-400 text-xs">Explore news by selecting categories from the hierarchy tree.</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="flex-1 min-w-0">
+        <!-- ── SEARCH BAR (mobile) ──────────────────────────────────────── -->
+        <form method="get" asp-page="/Index" class="mb-6 sm:hidden">
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span class="material-symbols-outlined text-slate-400">search</span>
+        </div>
+        <input name="search" value="@Model.VM.SearchKeyword"
+               class="block w-full pl-10 pr-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary dark:text-white"
+               placeholder="Search articles..." type="text"/>
+        @if (Model.VM.SelectedCategoryId.HasValue)
+        {
+                <input type="hidden" name="categoryId" value="@Model.VM.SelectedCategoryId" />
+        }
+    </div>
+</form>
+
+@{
+    var breadcrumbPath = new List<DataAccessObjects.Category>();
+    if (Model.VM.SelectedCategoryId.HasValue)
+    {
+        var currentCat = Model.VM.Categories.FirstOrDefault(c => c.CategoryId == Model.VM.SelectedCategoryId);
+        while (currentCat != null)
+        {
+            breadcrumbPath.Insert(0, currentCat);
+            if (currentCat.ParentCategoryId.HasValue)
+            {
+                currentCat = Model.VM.Categories.FirstOrDefault(c => c.CategoryId == currentCat.ParentCategoryId);
+            }
+            else
+            {
+                currentCat = null;
+            }
+        }
+    }
+}
+
+@if (breadcrumbPath.Any())
+{
+    var currentCategory = breadcrumbPath.Last();
+    <nav aria-label="Breadcrumb" class="flex mb-6">
+        <ol class="inline-flex items-center gap-1.5 bg-white dark:bg-slate-900 py-1.5 px-3 rounded-md border border-slate-200 dark:border-slate-800 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <li class="inline-flex items-center">
+                <a class="inline-flex items-center text-slate-500 hover:text-slate-700 dark:hover:text-white transition-colors font-medium text-[13.5px] px-1 relative top-[0.5px]" href="/Index">
+                    <span class="material-symbols-outlined text-[15.5px] mr-1.5 text-slate-400" style="font-variation-settings: 'FILL' 1;">home</span>
+                    Home
+                </a>
+            </li>
+            @for (int i = 0; i < breadcrumbPath.Count; i++)
+            {
+                var cat = breadcrumbPath[i];
+                var isLast = i == breadcrumbPath.Count - 1;
+                <li class="flex items-center gap-1.5" @(isLast ? "aria-current=\"page\"" : "")>
+                    <span class="material-symbols-outlined text-slate-200 dark:text-slate-600 text-[16px]">chevron_right</span>
+                    @if (isLast)
+                    {
+                        <span class="font-bold text-primary px-2 py-0.5 bg-primary/10 rounded-md text-[13.5px]">@cat.CategoryName</span>
+                    }
+                    else
+                    {
+                        <a class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors font-medium text-[13.5px] px-1 relative top-[0.5px]" href="/Index?categoryId=@cat.CategoryId">
+                            @cat.CategoryName
+                        </a>
+                    }
+                </li>
+            }
+        </ol>
+    </nav>
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+        <h2 class="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-slate-100">
+            <div class="p-2 bg-primary/10 rounded-lg text-primary">
+                <span class="material-symbols-outlined">filter_alt</span>
+            </div>
+            @currentCategory.CategoryName News
+            <span class="text-sm font-normal text-slate-500 ml-2">(Filtered View)</span>
+        </h2>
+        <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg shadow-sm">
+            <span class="material-symbols-outlined text-[18px] text-primary">view_list</span>
+            <span><strong class="text-slate-900 dark:text-white">@Model.VM.Grid.Items.Count()</strong> articles</span>
+        </div>
+    </div>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(Model.VM.SearchKeyword) || Model.VM.SelectedTagId.HasValue)
+    {
+        <div class="mb-6 flex flex-wrap items-center gap-3">
+            @if (!string.IsNullOrWhiteSpace(Model.VM.SearchKeyword))
+            {
+                <span class="text-sm text-slate-500 dark:text-slate-400">
+                    Search: <strong class="text-slate-800 dark:text-white bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded">"@Model.VM.SearchKeyword"</strong>
+                </span>
+            }
+            @if (Model.VM.SelectedTagId.HasValue)
+            {
+                <span class="text-sm text-slate-500 dark:text-slate-400">
+                    Tag: <strong class="text-slate-800 dark:text-white bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-800/50 text-blue-800 dark:text-blue-200">#Filtered</strong>
+                </span>
+            }
+            <a asp-page="/Index" class="text-sm text-primary hover:underline font-bold">Clear Filters</a>
+        </div>
+    }
+
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Latest Stories</h2>
+        <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg shadow-sm">
+            <span class="material-symbols-outlined text-[18px] text-primary">view_list</span>
+            <span><strong class="text-slate-900 dark:text-white">@Model.VM.Grid.Items.Count()</strong> articles</span>
+        </div>
+    </div>
+}
+
+<!-- ── NEWS GRID ─────────────────────────────────────────────────── -->
+<div id="news-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    @await Html.PartialAsync("_NewsCardPartial", Model.VM.Grid.Items)
+</div>
+
+<!-- ── LOAD MORE ─────────────────────────────────────────────────── -->
+<div id="load-more-section" class="mt-16 pb-16 flex flex-col items-center gap-4"
+     data-has-more="@Model.VM.Grid.HasMore.ToString().ToLower()"
+     data-next-cursor="@Model.VM.Grid.NextCursor"
+     data-search="@Model.VM.SearchKeyword"
+     data-category-id="@Model.VM.SelectedCategoryId"
+     data-tag-id="@Model.VM.SelectedTagId">
+
+    @if (Model.VM.Grid.HasMore)
+    {
+            <button id="load-more-btn"
+                    onclick="loadMore()"
+                    class="px-8 py-3 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-lg font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center gap-2 shadow-sm">
+                Show More Articles
+                <span class="material-symbols-outlined">expand_more</span>
+            </button>
+    }
+
+    <p class="text-slate-500 dark:text-slate-400 text-sm italic">
+        Showing @Model.VM.Grid.Items.Count() articles
+        @if (Model.VM.Grid.HasMore)
+        {
+            <text>• more available</text>
+        }
+    </p>
+</div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script>
+        // Setup SignalR Connection
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/newsHub")
+            .build();
+
+        connection.on("UpdateNews", function () {
+            // Realtime Update logic: reload the page to get the freshest news
+            window.location.reload();
+        });
+
+        connection.start().catch(function (err) {
+            console.error("SignalR Connection Error: ", err.toString());
+        });
+
+        async function loadMore() {
+                const section = document.getElementById('load-more-section');
+                const btn = document.getElementById('load-more-btn');
+
+                const cursor = section.dataset.nextCursor;
+                const search = section.dataset.search || '';
+                const categoryId = section.dataset.categoryId || '';
+                const tagId = section.dataset.tagId || '';
+
+                // Show loading state
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-symbols-outlined animate-spin">autorenew</span> Loading...';
+
+                const params = new URLSearchParams();
+                params.append('handler', 'LoadMore');
+                if (cursor) params.append('cursor', cursor);
+                if (search) params.append('search', search);
+                if (categoryId) params.append('categoryId', categoryId);
+                if (tagId) params.append('tagId', tagId);
+
+                const response = await fetch(`/Index?${params.toString()}`);
+                const html = await response.text();
+
+                // Append new cards
+                document.getElementById('news-grid').insertAdjacentHTML('beforeend', html);
+
+                // Update cursor from response header or re-fetch state
+                // Simple approach: hide button if no more
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const cards = doc.querySelectorAll('article');
+
+                if (cards.length < 6) {
+                    btn.remove();
+                    section.querySelector('p').textContent = 'All articles loaded';
+                } else {
+                    // Update cursor - we need the last article id
+                    // The partial view returns articles, last one has data we need
+                    // Re-enable button
+                    btn.disabled = false;
+                    btn.innerHTML = 'Show More Articles <span class="material-symbols-outlined">expand_more</span>';
+
+                    // Get next cursor from last article link
+                    const allArticles = document.querySelectorAll('#news-grid article');
+                    const lastLink = allArticles[allArticles.length - 1]?.querySelector('a[href*="Detail"]');
+                    if (lastLink) {
+                        const match = lastLink.getAttribute('href').match(/id=(\d+)$/);
+                        if (match) section.dataset.nextCursor = match[1];
+                    }
+                }
+            }
+        </script>
+}

@@ -1,0 +1,148 @@
+@model List<ViewModel.Category.CategoryNodeViewModel>
+@using ViewModel.Category
+
+@{
+    short? activeCategoryId = ViewData["ActiveCategoryId"] as short?;
+
+    string GetIconOptions(string name) {
+        var lower = name.ToLower();
+        if (lower.Contains("academic") || lower.Contains("school")) return "school";
+        if (lower.Contains("life") || lower.Contains("campus")) return "deck";
+        if (lower.Contains("faculty") || lower.Contains("person") || lower.Contains("people")) return "person";
+        if (lower.Contains("event")) return "event";
+        if (lower.Contains("tech") || lower.Contains("innovation")) return "memory";
+        if (lower.Contains("sport")) return "sports_soccer";
+        if (lower.Contains("research")) return "biotech";
+        return "folder";
+    }
+
+    bool IsNodeActive(CategoryNodeViewModel node, short? activeId) {
+        if (activeId == null) return false;
+        if (node.CategoryId == activeId) return true;
+        if (node.SubCategories != null) {
+            foreach (var sub in node.SubCategories) {
+                if (IsNodeActive(sub, activeId)) return true;
+            }
+        }
+        return false;
+    }
+
+    void RenderNode(CategoryNodeViewModel node, int depth, short? activeId)
+    {
+        bool hasChildren = node.SubCategories != null && node.SubCategories.Any();
+        bool isActivePath = IsNodeActive(node, activeId);
+        bool isExactlyActive = node.CategoryId == activeId;
+        
+        string detailsClass = depth == 0 ? "group/item relative" : "group/sub relative";
+
+        // Depth 0 Active and Inactive classes
+        string d0SumActive = "flex items-center justify-between px-3 py-2 text-sm font-bold rounded-md cursor-pointer text-primary bg-primary/5 dark:bg-primary/10 transition-colors";
+        string d0SumInactive = "flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md cursor-pointer text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary dark:hover:text-primary transition-colors";
+        
+        // Depth > 0 Summary classes
+        string subSumActive = "flex items-center justify-between px-2 py-1.5 text-sm font-semibold rounded-md cursor-pointer text-slate-700 dark:text-slate-200 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors";
+        string subSumInactive = "flex items-center justify-between px-2 py-1.5 text-sm font-medium rounded-md cursor-pointer text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors";
+
+        // Leaf classes
+        string leafActive = "block px-2 py-1.5 text-sm rounded-md text-primary bg-primary/10 font-medium flex items-center justify-between";
+        string leafInactive = "block px-2 py-1.5 text-sm rounded-md text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors";
+        
+        string d0LeafActive = "flex items-center px-3 py-2 text-sm font-bold rounded-md text-primary bg-primary/5 dark:bg-primary/10 transition-colors";
+        string d0LeafInactive = "flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary dark:hover:text-primary transition-colors group";
+
+        string childContainerClass = depth == 0 ? "hidden group-hover/item:block" : "hidden group-hover/sub:block";
+        string chevronRotateClass = depth == 0 ? "group-hover/item:rotate-180 text-slate-400" : "group-hover/sub:rotate-180 text-slate-400";
+        if (isActivePath) {
+            chevronRotateClass = depth == 0 ? "group-hover/item:rotate-180 text-primary/70" : "group-hover/sub:rotate-180 text-primary/70";
+        }
+
+        @:<div class="@detailsClass">
+        
+        @if (depth == 0 && isActivePath)
+        {
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full"></div>
+        }
+
+        @if (hasChildren)
+        {
+            <a href="/Index?categoryId=@node.CategoryId" class="@(depth == 0 ? (isActivePath ? d0SumActive : d0SumInactive) : (isActivePath ? subSumActive : subSumInactive))">
+                @if (depth == 0)
+                {
+                    <div class="flex items-center">
+                        <span class="material-symbols-outlined text-[1.1rem] mr-2.5 @(isActivePath ? "text-primary" : "text-slate-400 group-hover/item:text-primary")">@GetIconOptions(node.CategoryName)</span>
+                        @node.CategoryName
+                    </div>
+                }
+                else
+                {
+                    <span class="flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                        @node.CategoryName
+                    </span>
+                }
+                <span class="material-symbols-outlined text-sm transition-transform duration-200 chevron @chevronRotateClass">expand_more</span>
+            </a>
+            
+            <div class="@childContainerClass pl-3 mt-1 space-y-0.5 border-l-2 ml-3.5 @(isActivePath ? "border-primary/20 pb-1" : "border-slate-100 dark:border-slate-800")">
+                @foreach(var child in node.SubCategories) {
+                    RenderNode(child, depth + 1, activeId);
+                }
+            </div>
+        }
+        else
+        {
+            if (depth == 0)
+            {
+                <a class="@(isExactlyActive ? d0LeafActive : d0LeafInactive)" href="/Index?categoryId=@node.CategoryId">
+                    <span class="material-symbols-outlined text-[1.1rem] mr-2.5 @(isExactlyActive ? "text-primary" : "text-slate-400 group-hover:text-primary")">@GetIconOptions(node.CategoryName)</span>
+                    @node.CategoryName
+                </a>
+            }
+            else
+            {
+                <a class="@(isExactlyActive ? leafActive : leafInactive)" href="/Index?categoryId=@node.CategoryId">
+                    @if(depth == 1 && !isExactlyActive) {
+                        <span class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                            @node.CategoryName
+                        </span>
+                    } else {
+                        @node.CategoryName
+                    }
+                </a>
+            }
+        }
+        @:</div>
+    }
+}
+
+<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm sticky top-24">
+    <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
+        <h3 class="text-sm font-bold uppercase text-slate-500 tracking-wider">Categories</h3>
+    </div>
+    <nav class="p-3 space-y-0.5" id="category-tree">
+        @{
+            bool isAllStoriesActive = !activeCategoryId.HasValue;
+            string d0LeafActive = "flex items-center px-3 py-2 text-sm font-bold rounded-md text-primary bg-primary/5 dark:bg-primary/10 transition-colors";
+            string d0LeafInactive = "flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary dark:hover:text-primary transition-colors group";
+        }
+        <div class="relative">
+            @if (isAllStoriesActive)
+            {
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full"></div>
+            }
+            <a class="@(isAllStoriesActive ? d0LeafActive : d0LeafInactive)" href="/Index">
+                <span class="material-symbols-outlined text-[1.1rem] mr-2.5 @(isAllStoriesActive ? "text-primary" : "text-slate-400 group-hover:text-primary")">grid_view</span>
+                All Stories
+            </a>
+
+        </div>
+        @if (Model != null)
+        {
+            foreach (var rootCategory in Model)
+            {
+                RenderNode(rootCategory, 0, activeCategoryId);
+            }
+        }
+    </nav>
+</div>

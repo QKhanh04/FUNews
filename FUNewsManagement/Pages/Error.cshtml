@@ -1,0 +1,30 @@
+@page
+@model ErrorModel
+@{
+    ViewData["Title"] = "Error";
+}
+
+<div class="max-w-4xl mx-auto py-12 px-4 text-center">
+    <span class="material-symbols-outlined text-red-500 text-6xl mb-4">error</span>
+    <h1 class="text-4xl font-black text-slate-900 dark:text-white mb-2">Oops! Error</h1>
+    <h2 class="text-xl text-slate-600 dark:text-slate-400 mb-8">An error occurred while processing your request.</h2>
+
+    @if (Model.ShowRequestId)
+    {
+        <div class="inline-block bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-lg text-sm mb-8">
+            <strong class="text-slate-900 dark:text-white">Request ID:</strong> 
+            <code class="text-primary">@Model.RequestId</code>
+        </div>
+    }
+
+    <div class="mt-8 p-6 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-xl text-left">
+        <h3 class="font-bold text-amber-800 dark:text-amber-400 mb-2">Development Mode</h3>
+        <p class="text-sm text-amber-700 dark:text-amber-500 mb-4">
+            Swapping to the <strong>Development</strong> environment displays detailed information about the error that occurred.
+        </p>
+        <p class="text-xs text-amber-600 dark:text-amber-600">
+            <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
+            It can result in displaying sensitive information from exceptions to end users.
+        </p>
+    </div>
+</div>

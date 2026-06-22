@@ -1,0 +1,279 @@
+@using System.Security.Claims
+@{
+    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+    var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "User";
+    var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? "";
+    var roleLabel = userRole switch {
+        "0" => "Admin",
+        "1" => "Staff",
+        _ => "User"
+    };
+
+    // Determine active menu item based on current route
+    var pageName = ViewContext.RouteData.Values["page"]?.ToString();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>@ViewData["Title"] - FUNews Management</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-25..0&display=block" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f97316",
+                        "background-light": "#fcfcfd",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <script>
+        // Check local storage for dark mode preference
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-active {
+            background-color: rgba(249, 115, 22, 0.1);
+            color: #f97316;
+            border-right: 3px solid #f97316;
+        }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-display transition-colors duration-200">
+
+<!-- ===== TOAST CONTAINER ===== -->
+<div id="toastContainer" class="fixed top-20 right-5 z-[9999] flex flex-col gap-3 w-[360px] max-w-[calc(100vw-2rem)]"></div>
+
+<div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col fixed h-full z-50">
+        <div class="p-6 flex items-center gap-3">
+            <a asp-page="/Index" class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white">
+                    <span class="material-symbols-outlined">newspaper</span>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">FUNews</h1>
+                    <p class="text-xs text-slate-500 font-medium">Management System</p>
+                </div>
+            </a>
+        </div>
+        <nav class="flex-1 px-3 space-y-1 mt-4">
+            <a asp-page="/News/Dashboard" 
+               class="flex items-center gap-3 px-3 py-2.5 @(pageName == "/News/Dashboard" ? "sidebar-active" : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800") rounded-lg transition-colors group">
+                <span class="material-symbols-outlined text-[22px]">dashboard</span>
+                <span class="text-sm font-semibold">Dashboard</span>
+            </a>
+            
+            @if (userRole == "0" || userRole == "1")
+            {
+                <a asp-page="/News/Manage" 
+                   class="flex items-center gap-3 px-3 py-2.5 @(pageName == "/News/Manage" ? "sidebar-active" : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800") rounded-lg transition-colors group">
+                    <span class="material-symbols-outlined text-[22px]">article</span>
+                    <span class="text-sm font-semibold">News Management</span>
+                </a>
+            }
+            @if (userRole == "1")
+            {
+                
+                <a asp-page="/Category/Manage" 
+                   class="flex items-center gap-3 px-3 py-2.5 @(pageName == "/Category/Manage" ? "sidebar-active" : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800") rounded-lg transition-colors group">
+                    <span class="material-symbols-outlined text-[22px]">category</span>
+                    <span class="text-sm font-semibold">Category Management</span>
+                </a>
+            }
+            @if (userRole == "0")
+            {
+                <a asp-page="/Account/Manage" 
+                   class="flex items-center gap-3 px-3 py-2.5 @(pageName == "/Account/Manage" ? "sidebar-active" : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800") rounded-lg transition-colors group">
+                    <span class="material-symbols-outlined text-[22px]">group</span>
+                    <span class="text-sm font-semibold">User Management</span>
+                </a>
+            }
+            
+            @if (userRole == "1")
+            {
+                <a asp-page="/News/History" 
+                   class="flex items-center gap-3 px-3 py-2.5 @(pageName == "/News/History" ? "sidebar-active" : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800") rounded-lg transition-colors group">
+                    <span class="material-symbols-outlined text-[22px]">history</span>
+                    <span class="text-sm font-semibold">News History</span>
+                </a>
+            }
+
+            @if (userRole == "0")
+            {
+                <a asp-page="/News/Report" 
+                   class="flex items-center gap-3 px-3 py-2.5 @(pageName == "/News/Report" ? "sidebar-active" : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800") rounded-lg transition-colors group">
+                    <span class="material-symbols-outlined text-[22px]">analytics</span>
+                    <span class="text-sm font-semibold">News Report</span>
+                </a>
+            }
+            
+            <a asp-page="/Account/Profile" 
+               class="flex items-center gap-3 px-3 py-2.5 @(pageName == "/Account/Profile" ? "sidebar-active" : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800") rounded-lg transition-colors group">
+                <span class="material-symbols-outlined text-[22px]">person</span>
+                <span class="text-sm font-semibold">Profile</span>
+            </a>
+        </nav>
+        
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+            @if (userRole == "0" || userRole == "1")
+            {
+                <a asp-page="/News/Manage" 
+                   class="flex items-center gap-3 px-3 py-2.5 @(pageName == "/News/Manage" ? "sidebar-active" : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800") rounded-lg transition-colors group">
+                    <span class="material-symbols-outlined text-[22px]">article</span>
+                    <span class="text-sm font-semibold">News Management</span>
+                </a>
+            }
+            @if (userRole == "1")
+            {
+                <a asp-page="/Category/Manage" class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm">
+                    <span class="material-symbols-outlined text-sm">add</span>
+                    <span class="text-sm">Create News</span>
+                </a>
+            }
+            <div class="mt-4 flex items-center gap-3 px-2">
+                <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                    @userName.Substring(0, 1).ToUpper()
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">@roleLabel</p>
+                    <p class="text-xs font-bold text-slate-900 dark:text-white truncate">@userName</p>
+                </div>
+                
+                <button type="button" id="theme-toggle" class="text-slate-400 hover:text-primary transition-colors flex items-center justify-center p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800" title="Toggle Dark/Light Mode">
+                    <span id="theme-toggle-icon" class="material-symbols-outlined text-[20px]">dark_mode</span>
+                </button>
+
+                <a asp-page="/Account/Logout" class="text-slate-400 hover:text-red-500 transition-colors ml-1" title="Logout">
+                    <span class="material-symbols-outlined text-lg">logout</span>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 ml-64 p-8">
+        @RenderBody()
+    </main>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    // Toast System
+    const toastConfig = {
+        success: { bar: 'bg-green-500', icon: 'bg-gradient-to-br from-green-400 to-green-600', title: 'text-green-700', border: 'border-l-green-500', label: 'Success!', symbol: 'check_circle' },
+        warning: { bar: 'bg-amber-400', icon: 'bg-gradient-to-br from-amber-300 to-amber-500', title: 'text-amber-700', border: 'border-l-amber-400', label: 'Warning!', symbol: 'warning' },
+        danger: { bar: 'bg-red-500', icon: 'bg-gradient-to-br from-red-400 to-red-600', title: 'text-red-700', border: 'border-l-red-500', label: 'Error!', symbol: 'cancel' },
+        info: { bar: 'bg-blue-500', icon: 'bg-gradient-to-br from-blue-400 to-blue-600', title: 'text-blue-700', border: 'border-l-blue-500', label: 'Information', symbol: 'info' }
+    };
+
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const cfg = toastConfig[type] || toastConfig.info;
+        const toast = document.createElement('div');
+        toast.className = `relative flex items-start gap-3 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 border-l-4 ${cfg.border} p-4 overflow-hidden mb-3 transition-all duration-300 transform translate-x-full`;
+        toast.innerHTML = `
+            <div class="w-9 h-9 rounded-full ${cfg.icon} flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">${cfg.symbol}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold ${cfg.title}">${cfg.label}</p>
+                <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">${message}</p>
+            </div>
+            <button onclick="this.parentElement.remove()" class="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-colors">
+                <span class="material-symbols-outlined text-base">close</span>
+            </button>
+            <div class="absolute bottom-0 left-0 h-1 ${cfg.bar} transition-none w-full pointer-events-none" id="progress-bar" style="width: 100%;"></div>
+        `;
+        container.appendChild(toast);
+        
+        // Animate in and start bar
+        requestAnimationFrame(() => {
+            toast.classList.remove('translate-x-full');
+            const bar = toast.querySelector('#progress-bar');
+            bar.style.transition = 'width 5000ms linear';
+            bar.style.width = '0%';
+        });
+
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-x-full');
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+
+    $(document).ready(function() {
+        @if (TempData["ToastMessage"] != null)
+        {
+            <text>showToast("@Html.Raw(TempData["ToastMessage"])", "@TempData["ToastType"]");</text>
+        }
+
+        // Theme Toggle Logic
+        var themeToggleIcon = document.getElementById('theme-toggle-icon');
+
+        // Change the icon inside the button based on previous settings
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            themeToggleIcon.textContent = 'light_mode';
+        } else {
+            themeToggleIcon.textContent = 'dark_mode';
+        }
+
+        var themeToggleBtn = document.getElementById('theme-toggle');
+
+        themeToggleBtn.addEventListener('click', function() {
+            // if set via local storage previously
+            if (localStorage.getItem('theme')) {
+                if (localStorage.getItem('theme') === 'light') {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                    themeToggleIcon.textContent = 'light_mode';
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                    themeToggleIcon.textContent = 'dark_mode';
+                }
+            // if NOT set via local storage previously
+            } else {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                    themeToggleIcon.textContent = 'dark_mode';
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                    themeToggleIcon.textContent = 'light_mode';
+                }
+            }
+        });
+    });
+</script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+
+

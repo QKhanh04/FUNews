@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using DataAccessObjects;
 using Common;
@@ -36,9 +36,10 @@ namespace Service.Interface
             int pageNumber,
             int pageSize);
 
-        Task<ServiceResult<bool>> AddNewsAsync(NewsArticle article, List<int> selectedTagIds, string? newTags, Microsoft.AspNetCore.Http.IFormFile? imageFile);
-        Task<ServiceResult<bool>> UpdateNewsAsync(NewsArticle article, List<int> selectedTagIds, string? newTags, Microsoft.AspNetCore.Http.IFormFile? imageFile);
+        Task<ServiceResult<bool>> AddNewsAsync(NewsArticle article, List<int> selectedTagIds, string? newTags, IFormFile? imageFile, string? userRole);
+        Task<ServiceResult<bool>> UpdateNewsAsync(NewsArticle article, List<int> selectedTagIds, string? newTags, IFormFile? imageFile, string? userRole);
         Task<ServiceResult<bool>> DeleteNewsAsync(int id);
+        Task<ServiceResult<bool>> ApproveNewsAsync(int id);
         
         Task<ViewModel.News.NewsReportViewModel> GetReportAsync(
             DateTime? startDate,

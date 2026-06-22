@@ -1,10 +1,5 @@
-using DataAccessObjects;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.EntityFrameworkCore;
-using Repository.Implement;
-using Repository.Interface;
-using Service.Implement;
-using Service.Interface;
+using FUNewsManagement.Services;
 
 namespace FUNewsManagement
 {
@@ -17,23 +12,25 @@ namespace FUNewsManagement
             builder.Configuration.AddEnvironmentVariables();
 
             // Add services to the container.
-            builder.Services.AddControllersWithViews();
-            builder.Services.AddDbContext<FUNewsContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddRazorPages();
+            builder.Services.AddSignalR();
+            
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddTransient<FUNewsManagement.Services.AuthHeaderHandler>();
+            
+            builder.Services.AddHttpClient("BackendApi", client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5012/"); // Update with actual API port
+            }).AddHttpMessageHandler<FUNewsManagement.Services.AuthHeaderHandler>();
+            
+            builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("BackendApi"));
 
-            builder.Services.AddScoped(typeof(IGenericRepository<,>),
-                           typeof(GenericRepository<,>));
-            builder.Services.AddScoped<INewsRepository, NewsRepository>();
-            builder.Services.AddScoped<IAccountRepository, AccountRepository>();
-            builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-            builder.Services.AddScoped<ITagRepository, TagRepository>();
-            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-            builder.Services.AddScoped<IAccountService, AccountService>();
-            builder.Services.AddScoped<ICategoryService, CategoryService>();
-            builder.Services.AddScoped<INewsService, NewsService>();
-            builder.Services.AddScoped<ITagService, TagService>();
-            builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+            // Dependency Injection for API Clients
+            builder.Services.AddScoped<FUNewsManagement.Services.IAccountService, FUNewsManagement.Services.AccountApiClient>();
+            builder.Services.AddScoped<FUNewsManagement.Services.ICategoryService, FUNewsManagement.Services.CategoryApiClient>();
+            builder.Services.AddScoped<FUNewsManagement.Services.INewsService, FUNewsManagement.Services.NewsApiClient>();
+            builder.Services.AddScoped<FUNewsManagement.Services.ITagService, FUNewsManagement.Services.TagApiClient>();
+            builder.Services.AddScoped<FUNewsManagement.Services.ICloudinaryService, FUNewsManagement.Services.CloudinaryService>();
 
             builder.Services.AddAuthentication(options =>
             {
@@ -44,7 +41,7 @@ namespace FUNewsManagement
             {
                 options.LoginPath = "/Account/Login";
                 options.LogoutPath = "/Account/Logout";
-                options.AccessDeniedPath = "/Account/Login";
+                options.AccessDeniedPath = "/Account/AccessDenied";
                 options.Cookie.Name = "FUNews.Auth";
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
@@ -62,7 +59,7 @@ namespace FUNewsManagement
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
-                app.UseExceptionHandler("/Home/Error");
+                app.UseExceptionHandler("/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
@@ -74,9 +71,7 @@ namespace FUNewsManagement
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
+            app.MapRazorPages();
 
             app.Run();
         }

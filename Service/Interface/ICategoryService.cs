@@ -11,6 +11,7 @@ namespace Service.Interface
         Task<IEnumerable<Category>> GetAllActiveCategories();
         Task<IEnumerable<Category>> GetAllCategoriesAsync();
         Task<CategoryManagementViewModel> GetCategoryManagementAsync(string? search, int pageNumber, int pageSize);
+        Task<List<CategoryNodeViewModel>> GetCategoryTreeAsync();
         Task<Category?> GetCategoryByIdAsync(short id);
         Task<ServiceResult<bool>> AddCategoryAsync(Category category);
         Task<ServiceResult<bool>> UpdateCategoryAsync(Category category);

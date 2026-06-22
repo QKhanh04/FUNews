@@ -9,8 +9,8 @@ namespace Repository.Interface
 {
     public interface IAccountRepository : IGenericRepository<SystemAccount, short>
     {
-        Task<SystemAccount> GetUserByEmail(string email);
-        Task<SystemAccount> GetByGoogleIdAsync(string googleId);
+        Task<SystemAccount?> GetUserByEmail(string email);
+        Task<SystemAccount?> GetByGoogleIdAsync(string googleId);
    
     }
 }

@@ -1,0 +1,63 @@
+@model List<ViewModel.Home.NewsCardViewModel>
+
+@if (Model != null && Model.Any())
+{
+    var trending = Model.First();
+    var latest = Model.Skip(1).ToList();
+
+    <!-- Featured Result -->
+    <div class="mb-8">
+        <a asp-page="/News/Detail" asp-route-id="@trending.NewsArticleId" class="block relative rounded-xl overflow-hidden group cursor-pointer mb-3">
+            <div class="aspect-video bg-cover bg-center transition-transform duration-500 group-hover:scale-105" 
+                 style='background-image: url("@(string.IsNullOrWhiteSpace(trending.ThumbnailUrl) ? "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=600" : trending.ThumbnailUrl)");'>
+            </div>
+            <div class="absolute top-3 left-3 bg-primary text-white text-xs font-bold px-2 py-1 rounded shadow-sm">Trending</div>
+        </a>
+        <a asp-page="/News/Detail" asp-route-id="@trending.NewsArticleId">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white leading-snug mb-2 group-hover:text-primary transition-colors cursor-pointer">
+                @trending.NewsTitle
+            </h3>
+        </a>
+        <p class="text-slate-500 dark:text-slate-400 text-sm line-clamp-2 mb-2">
+            @(string.IsNullOrWhiteSpace(trending.Headline) ? (string.IsNullOrWhiteSpace(trending.NewsContent) ? "" : "...") : trending.Headline)
+        </p>
+        <div class="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500 font-medium">
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">schedule</span> @trending.ReadingMinutes min read</span>
+            <span>•</span>
+            <span>@(trending.CreatedDate?.ToString("MMM dd, yyyy") ?? "")</span>
+        </div>
+    </div>
+    
+    if (latest.Any())
+    {
+        <div class="h-px bg-slate-100 dark:bg-slate-800 w-full mb-6"></div>
+        <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-4">Latest Articles</h4>
+        
+        <!-- List Items -->
+        <div class="flex flex-col gap-6">
+            @foreach (var item in latest)
+            {
+                <a asp-page="/News/Detail" asp-route-id="@item.NewsArticleId" class="group flex gap-4 cursor-pointer">
+                    <div class="shrink-0 w-24 h-24 rounded-lg bg-cover bg-center overflow-hidden" 
+                         style='background-image: url("@(string.IsNullOrWhiteSpace(item.ThumbnailUrl) ? "https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?auto=format&fit=crop&q=80&w=200" : item.ThumbnailUrl)");'>
+                    </div>
+                    <div class="flex flex-col justify-center flex-1 min-w-0">
+                        <h3 class="text-base font-semibold text-slate-900 dark:text-white leading-tight mb-1 group-hover:text-primary transition-colors line-clamp-2">
+                            @item.NewsTitle
+                        </h3>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm mb-2 line-clamp-1">@(string.IsNullOrWhiteSpace(item.Headline) ? "..." : item.Headline)</p>
+                        <div class="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500 font-medium">
+                            <span>@item.ReadingMinutes min read</span>
+                            <span>•</span>
+                            <span class="text-primary group-hover:underline">Read Now</span>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+}
+else
+{
+    <p class="text-slate-500 dark:text-slate-400 text-sm italic">No articles found for this tag.</p>
+}

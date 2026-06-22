@@ -1,0 +1,176 @@
+@page
+@model FUNewsManagement.Pages.News.HistoryModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "News Creation History";
+}
+
+<!-- Breadcrumbs -->
+<nav aria-label="Breadcrumb" class="flex text-sm font-medium text-slate-500 mb-6">
+    <ol class="flex items-center space-x-2">
+        <li><a asp-page="/Index" class="hover:text-primary transition-colors">Home</a></li>
+        <li><span class="material-symbols-outlined text-base">chevron_right</span></li>
+        <li class="text-slate-900 font-bold">@ViewData["Title"]</li>
+    </ol>
+</nav>
+
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div>
+        <h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">News Creation History</h2>
+        <p class="text-slate-500 mt-1">Review and manage your previously published news articles.</p>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-5">
+        <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+            <span class="material-symbols-outlined text-3xl">post_add</span>
+        </div>
+        <div>
+            <p class="text-sm font-medium text-slate-500">Total Articles Created</p>
+            <h3 class="text-2xl font-bold text-slate-900 dark:text-white">@Model.HistoryData.Stats.TotalCreated</h3>
+        </div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-5">
+        <div class="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+            <span class="material-symbols-outlined text-3xl">visibility</span>
+        </div>
+        <div>
+            <p class="text-sm font-medium text-slate-500">Total Views</p>
+            <h3 class="text-2xl font-bold text-slate-900 dark:text-white">@Model.HistoryData.Stats.TotalViews</h3>
+            <p class="text-xs text-slate-400 mt-1">Estimates based on activity</p>
+        </div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-5">
+        <div class="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+            <span class="material-symbols-outlined text-3xl">stars</span>
+        </div>
+        <div>
+            <p class="text-sm font-medium text-slate-500">Most Frequent Category</p>
+            <h3 class="text-2xl font-bold text-slate-900 dark:text-white">@(Model.HistoryData.Stats.MostFrequentCategory ?? "N/A")</h3>
+            <p class="text-xs text-slate-400 font-semibold mt-1">@Model.HistoryData.Stats.MostFrequentCategoryCount articles published</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filters and Search -->
+<div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6">
+    <form method="get" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4 items-end">
+        <div class="xl:col-span-3">
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1 text-left">Search Articles</label>
+            <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+                <input name="search" value="@Model.HistoryData.SearchTerm" class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary text-sm" placeholder="Title or keyword..." type="text"/>
+            </div>
+        </div>
+        <div class="xl:col-span-3">
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1 text-left">Category</label>
+            <select name="categoryId" class="w-full py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary text-sm">
+                <option value="">All Categories</option>
+                @foreach (var cat in Model.Categories)
+                {
+                    <option value="@cat.CategoryId" selected="@(Model.HistoryData.CategoryId == cat.CategoryId)">@cat.CategoryName</option>
+                }
+            </select>
+        </div>
+        <div class="md:col-span-2 xl:col-span-4">
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1 text-left">Date Range</label>
+            <div class="flex items-center gap-2">
+                <input name="startDate" value="@Model.HistoryData.StartDate?.ToString("yyyy-MM-dd")" class="w-full py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary text-sm" type="date"/>
+                <span class="text-slate-400">to</span>
+                <input name="endDate" value="@Model.HistoryData.EndDate?.ToString("yyyy-MM-dd")" class="w-full py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary text-sm" type="date"/>
+            </div>
+        </div>
+        <div class="md:col-span-2 xl:col-span-2 flex gap-2">
+            <button type="submit" class="flex-1 bg-primary hover:bg-primary/90 text-white font-bold py-2 rounded-lg text-sm transition-all shadow-sm">
+                Apply Filters
+            </button>
+            <a asp-page="/News/History" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                <span class="material-symbols-outlined text-xl align-middle">restart_alt</span>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Articles Table -->
+<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden text-left">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Title</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Category</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Creation Date</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                @foreach (var article in Model.HistoryData.Articles)
+                {
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-md bg-slate-100 overflow-hidden flex-shrink-0">
+                                    @if (!string.IsNullOrEmpty(article.ThumbnailUrl))
+                                    {
+                                        <div class="w-full h-full bg-cover bg-center" style="background-image: url('@article.ThumbnailUrl')"></div>
+                                    }
+                                    else
+                                    {
+                                        <div class="w-full h-full bg-slate-200 flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-slate-400">image</span>
+                                        </div>
+                                    }
+                                </div>
+                                <p class="text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">@article.NewsTitle</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs font-bold">@article.CategoryName</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            @if (article.NewsStatus == true)
+                            {
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 text-xs font-bold">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Draft
+                                </span>
+                            }
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">@article.CreatedDate?.ToString("MMM dd, yyyy")</td>
+                        <td class="px-6 py-4 text-right">
+                            <a asp-page="/News/Detail" asp-route-id="@article.NewsArticleId" class="text-primary hover:text-primary/80 font-bold text-sm inline-flex items-center gap-1">
+                                View Details <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <!-- Pagination -->
+    <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <p class="text-sm text-slate-500 font-medium">Showing @(((Model.HistoryData.PageNumber - 1) * Model.HistoryData.PageSize) + 1) to @(Math.Min(Model.HistoryData.PageNumber * Model.HistoryData.PageSize, Model.HistoryData.TotalCount)) of @Model.HistoryData.TotalCount entries</p>
+        <div class="flex gap-2 text-left">
+            @if (Model.HistoryData.PageNumber > 1)
+            {
+                <a asp-page="/News/History" asp-route-pageNumber="@(Model.HistoryData.PageNumber - 1)" asp-route-search="@Model.HistoryData.SearchTerm" asp-route-categoryId="@Model.HistoryData.CategoryId" class="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 transition-colors">Previous</a>
+            }
+            
+            <button class="px-3 py-1 bg-primary text-white rounded-lg text-sm font-bold shadow-sm">@Model.HistoryData.PageNumber</button>
+
+            @if (Model.HistoryData.PageNumber * Model.HistoryData.PageSize < Model.HistoryData.TotalCount)
+            {
+                <a asp-page="/News/History" asp-route-pageNumber="@(Model.HistoryData.PageNumber + 1)" asp-route-search="@Model.HistoryData.SearchTerm" asp-route-categoryId="@Model.HistoryData.CategoryId" class="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 transition-colors">Next</a>
+            }
+        </div>
+    </div>
+</div>

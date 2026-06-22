@@ -36,7 +36,8 @@ namespace Service.Implement
         public async Task<CategoryManagementViewModel> GetCategoryManagementAsync(string? search, int pageNumber, int pageSize)
         {
             IQueryable<Category> query = _categoryRepository.GetAllAsQueryable()
-                .Include(c => c.NewsArticles);
+                .Include(c => c.NewsArticles)
+                .Include(c => c.ParentCategory);
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -56,6 +57,8 @@ namespace Service.Implement
                     CategoryId = c.CategoryId,
                     CategoryName = c.CategoryName,
                     CategoryDesciption = c.CategoryDesciption,
+                    ParentCategoryId = c.ParentCategoryId,
+                    ParentCategoryName = c.ParentCategory != null ? c.ParentCategory.CategoryName : "None",
                     IsActive = c.IsActive ?? false,
                     NewsCount = c.NewsArticles.Count
                 })
@@ -89,6 +92,31 @@ namespace Service.Implement
             };
         }
 
+        public async Task<List<CategoryNodeViewModel>> GetCategoryTreeAsync()
+        {
+            var activeCategories = await _categoryRepository.GetAllAsQueryable()
+                .Where(c => c.IsActive == true)
+                .OrderBy(c => c.CategoryName)
+                .ToListAsync();
+
+            var lookup = activeCategories.ToLookup(c => c.ParentCategoryId);
+
+            List<CategoryNodeViewModel> BuildTree(short? parentId)
+            {
+                return lookup[parentId]
+                    .Select(c => new CategoryNodeViewModel
+                    {
+                        CategoryId = c.CategoryId,
+                        CategoryName = c.CategoryName,
+                        CategoryDescription = c.CategoryDesciption,
+                        SubCategories = BuildTree(c.CategoryId)
+                    })
+                    .ToList();
+            }
+
+            return BuildTree(null);
+        }
+
         public async Task<Category?> GetCategoryByIdAsync(short id)
         {
             return await _categoryRepository.GetByIdAsync(id);
@@ -98,6 +126,28 @@ namespace Service.Implement
         {
             try
             {
+                category.CategoryName = category.CategoryName.Trim();
+                category.CategoryDesciption = category.CategoryDesciption.Trim();
+
+                var duplicated = await _categoryRepository.GetAllAsQueryable()
+                    .AnyAsync(c => c.CategoryName == category.CategoryName);
+
+                if (duplicated)
+                {
+                    return ServiceResult<bool>.Fail("A category with the same name already exists.");
+                }
+
+                if (category.ParentCategoryId.HasValue)
+                {
+                    var parentExists = await _categoryRepository.GetAllAsQueryable()
+                        .AnyAsync(c => c.CategoryId == category.ParentCategoryId.Value);
+
+                    if (!parentExists)
+                    {
+                        return ServiceResult<bool>.Fail("Selected parent category does not exist.");
+                    }
+                }
+
                 await _categoryRepository.AddAsync(category);
                 await _unitOfWork.SaveChangesAsync();
                 return ServiceResult<bool>.Ok(true, "Category added successfully.");
@@ -112,7 +162,45 @@ namespace Service.Implement
         {
             try
             {
-                _categoryRepository.Update(category);
+                var existing = await _categoryRepository.GetByIdAsync(category.CategoryId);
+                if (existing == null)
+                {
+                    return ServiceResult<bool>.Fail("Category not found.");
+                }
+
+                category.CategoryName = category.CategoryName.Trim();
+                category.CategoryDesciption = category.CategoryDesciption.Trim();
+
+                if (category.ParentCategoryId == category.CategoryId)
+                {
+                    return ServiceResult<bool>.Fail("A category cannot be its own parent.");
+                }
+
+                var duplicated = await _categoryRepository.GetAllAsQueryable()
+                    .AnyAsync(c => c.CategoryId != category.CategoryId && c.CategoryName == category.CategoryName);
+
+                if (duplicated)
+                {
+                    return ServiceResult<bool>.Fail("A category with the same name already exists.");
+                }
+
+                if (category.ParentCategoryId.HasValue)
+                {
+                    var parentExists = await _categoryRepository.GetAllAsQueryable()
+                        .AnyAsync(c => c.CategoryId == category.ParentCategoryId.Value);
+
+                    if (!parentExists)
+                    {
+                        return ServiceResult<bool>.Fail("Selected parent category does not exist.");
+                    }
+                }
+
+                existing.CategoryName = category.CategoryName;
+                existing.CategoryDesciption = category.CategoryDesciption;
+                existing.ParentCategoryId = category.ParentCategoryId;
+                existing.IsActive = category.IsActive;
+
+                _categoryRepository.Update(existing);
                 await _unitOfWork.SaveChangesAsync();
                 return ServiceResult<bool>.Ok(true, "Category updated successfully.");
             }

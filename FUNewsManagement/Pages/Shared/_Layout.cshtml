@@ -1,0 +1,385 @@
+@using System.Security.Claims
+@{
+    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+    var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? "User";
+    var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? "";
+    var userInitials = string.IsNullOrEmpty(userName) ? "U"
+        : string.Join("", userName.Split(' ').Take(2).Select(w => w[0])).ToUpper();
+
+    // Role: 0 = Admin (from appsettings), 1 = Staff, 2 = Lecturer
+    bool isAdmin = userRole == "0";
+    bool isStaff = userRole == "1";
+    bool isLecturer = userRole == "2";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - FUNewsManagement</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=block" rel="stylesheet"/>
+    <!-- Material Symbols -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-25..0&display=block" rel="stylesheet"/>
+    <!-- Tailwind CSS -->
+    <link rel="stylesheet" href="~/css/output.css" asp-append-version="true" />
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        a { text-decoration: none; color: inherit; }
+
+        /* Toast animations */
+        @@keyframes slideInRight {
+            from { transform: translateX(120%); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+        }
+        @@keyframes slideOutRight {
+            from { transform: translateX(0);    opacity: 1; }
+            to   { transform: translateX(120%); opacity: 0; }
+        }
+        @@keyframes progressShrink {
+            from { transform: scaleX(1); }
+            to   { transform: scaleX(0); }
+        }
+        .toast-enter  { animation: slideInRight  0.4s ease-out forwards; }
+        .toast-leave  { animation: slideOutRight 0.3s ease-in  forwards; }
+        .toast-progress-bar { animation: progressShrink 5s linear forwards; transform-origin: left; }
+    </style>
+    <script>
+        // Check local storage for dark mode preference
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+</head>
+<body class="text-slate-900 dark:text-slate-100 bg-[#f6f6f8] dark:bg-slate-900 antialiased transition-colors duration-200">
+<div id="toastContainer" class="fixed top-20 right-5 z-[9999] flex flex-col gap-3 w-[360px] max-w-[calc(100vw-2rem)]"></div>
+
+<!-- ===== HEADER ===== -->
+<div class="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <header class="flex items-center justify-between h-16">
+            <div class="flex items-center gap-8">
+                <!-- Logo -->
+                <a asp-page="/Index" class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-3xl font-bold text-primary">newspaper</span>
+                    <h2 class="text-slate-900 dark:text-white text-xl font-extrabold tracking-tight m-0">FUNews</h2>
+                </a>
+                <!-- Nav Links -->
+                <nav class="hidden md:flex items-center gap-6">
+                    <a asp-page="/Index"
+                       class="text-primary text-sm font-semibold border-b-2 border-primary pb-1">Home</a>
+                    <a href="#" class="text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors">News Feed</a>
+
+                        @if (isStaff || isAdmin)
+                        {
+                            <a asp-page="/News/Dashboard" 
+                               class="text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors">Management Dashboard</a>
+                        }
+
+                    <a asp-page="/Privacy"
+                       class="text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors">About</a>
+                </nav>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <!-- Search -->
+                <form method="get" asp-page="/Index">
+                    <div class="hidden sm:block relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span class="material-symbols-outlined text-slate-400 text-sm">search</span>
+                        </div>
+                        <input name="search"
+                               value="@ViewData["CurrentSearch"]"
+                               class="block w-56 pl-10 pr-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-sm placeholder-slate-500 focus:outline-none border-none transition-all"
+                               placeholder="Search articles..." type="text"/>
+                    </div>
+                </form>
+
+                    @if (!isAuthenticated)
+                    {
+                        <!-- Not logged in: show Login button -->
+                        <a asp-page="/Account/Login"
+                           class="bg-primary hover:bg-primary-hover text-white px-5 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm">
+                            Login
+                        </a>
+                    }
+                    else
+                    {
+                        <!-- Logged in: show role badge + user dropdown -->
+                        @if (isAdmin)
+                        {
+                                <span class="hidden sm:inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full">
+                                    <span class="material-symbols-outlined text-sm">admin_panel_settings</span>Admin
+                                </span>
+                        }
+                        else if (isStaff)
+                        {
+                                <span class="hidden sm:inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">
+                                    <span class="material-symbols-outlined text-sm">edit_note</span>Staff
+                                </span>
+                        }
+                        else if (isLecturer)
+                        {
+                                <span class="hidden sm:inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
+                                    <span class="material-symbols-outlined text-sm">school</span>Lecturer
+                                </span>
+                        }
+
+                        <!-- User Dropdown -->
+                        <div class="relative" id="userMenu">
+                            <button onclick="toggleUserMenu()"
+                                    class="flex items-center gap-2 group">
+                                <div class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold border-2 border-primary/20">
+                                    @userInitials
+                                </div>
+                                <span class="material-symbols-outlined text-slate-400 text-sm transition-transform" id="chevronIcon">expand_more</span>
+                            </button>
+                            <!-- Dropdown -->
+                            <div id="userDropdown"
+                                 class="hidden absolute right-0 top-12 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden z-50">
+                                <!-- User info -->
+                                <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                                    <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">@userName</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 truncate">@userEmail</p>
+                                </div>
+                                <div class="py-1">
+                                    <a asp-page="/Account/Profile"
+                                       class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-primary dark:hover:text-primary transition-colors">
+                                        <span class="material-symbols-outlined text-lg">person</span>
+                                        My Profile
+                                    </a>
+
+                                    @if (isStaff || isAdmin)
+                                    {
+                                            <a asp-page="/News/Dashboard"
+                                               class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-primary dark:hover:text-primary transition-colors">
+                                                <span class="material-symbols-outlined text-lg">dashboard_customize</span>
+                                                Management Dashboard
+                                            </a>
+                                    }
+
+                                    <div class="border-t border-slate-100 dark:border-slate-700 mt-1 pt-1">
+                                        <a asp-page="/Account/Logout"
+                                           class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                            <span class="material-symbols-outlined text-lg">logout</span>
+                                            Logout
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <button type="button" id="theme-toggle" class="text-slate-400 hover:text-primary dark:hover:text-primary transition-colors flex items-center justify-center p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800" title="Toggle Dark/Light Mode">
+                        <span id="theme-toggle-icon" class="material-symbols-outlined text-[20px]">dark_mode</span>
+                    </button>
+            </div>
+        </header>
+    </div>
+</div>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main role="main" class="pb-3">
+            @RenderBody()
+    </main>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 mt-20 py-12 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="col-span-1 md:col-span-2">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="material-symbols-outlined text-2xl font-bold text-primary">newspaper</span>
+                    <h2 class="text-slate-900 dark:text-white text-lg font-extrabold tracking-tight m-0">FUNews</h2>
+                </div>
+                <p class="text-slate-500 dark:text-slate-400 max-w-sm text-sm">
+                    The official news and management system of the University. Empowering students and faculty with the latest information and research updates.
+                </p>
+            </div>
+            <div>
+                <h4 class="text-slate-900 dark:text-white font-bold mb-4 uppercase text-xs tracking-widest">Quick Links</h4>
+                <ul class="space-y-2 list-none p-0 m-0">
+                    <li><a href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">University Home</a></li>
+                    <li><a href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Academic Calendar</a></li>
+                    <li><a href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Staff Directory</a></li>
+                    <li><a href="#" class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm">Student Portal</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-slate-900 dark:text-white font-bold mb-4 uppercase text-xs tracking-widest">Connect</h4>
+                <div class="flex gap-4 mb-4">
+                    <a href="#" class="text-slate-400 dark:text-slate-500 hover:text-primary dark:hover:text-primary transition-colors"><span class="material-symbols-outlined">public</span></a>
+                    <a href="#" class="text-slate-400 dark:text-slate-500 hover:text-primary dark:hover:text-primary transition-colors"><span class="material-symbols-outlined">mail</span></a>
+                    <a href="#" class="text-slate-400 dark:text-slate-500 hover:text-primary dark:hover:text-primary transition-colors"><span class="material-symbols-outlined">share</span></a>
+                </div>
+                <p class="text-slate-500 dark:text-slate-400 text-sm">
+                    For press inquiries:<br/>
+                    <span class="font-medium text-slate-700 dark:text-slate-300">press@university.edu</span>
+                </p>
+            </div>
+        </div>
+        <div class="mt-12 pt-8 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p class="text-slate-400 dark:text-slate-500 text-xs m-0">© 2026 FUNews Management System. All rights reserved.</p>
+            <div class="flex gap-6">
+                <a asp-page="/Privacy" class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-xs">Privacy Policy</a>
+                <a href="#" class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-xs">Terms of Service</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+
+<script>
+    // ── User Dropdown ───────────────────────────────────────────
+    function toggleUserMenu() {
+        const dropdown = document.getElementById('userDropdown');
+        const chevron  = document.getElementById('chevronIcon');
+        const isOpen   = !dropdown.classList.contains('hidden');
+        dropdown.classList.toggle('hidden');
+        chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+    document.addEventListener('click', function (e) {
+        const menu = document.getElementById('userMenu');
+        if (menu && !menu.contains(e.target)) {
+            document.getElementById('userDropdown')?.classList.add('hidden');
+            const chevron = document.getElementById('chevronIcon');
+            if (chevron) chevron.style.transform = 'rotate(0deg)';
+        }
+    });
+
+    // ── Toast System (Tailwind) ─────────────────────────────────
+    const toastConfig = {
+        success: {
+            bar:   'bg-green-500',
+            icon:  'bg-gradient-to-br from-green-400 to-green-600',
+            title: 'text-green-700',
+            border:'border-l-green-500',
+            label: 'Success!',
+            symbol:'check_circle'
+        },
+        warning: {
+            bar:   'bg-amber-400',
+            icon:  'bg-gradient-to-br from-amber-300 to-amber-500',
+            title: 'text-amber-700',
+            border:'border-l-amber-400',
+            label: 'Warning!',
+            symbol:'warning'
+        },
+        danger: {
+            bar:   'bg-red-500',
+            icon:  'bg-gradient-to-br from-red-400 to-red-600',
+            title: 'text-red-700',
+            border:'border-l-red-500',
+            label: 'Error!',
+            symbol:'cancel'
+        },
+        info: {
+            bar:   'bg-blue-500',
+            icon:  'bg-gradient-to-br from-blue-400 to-blue-600',
+            title: 'text-blue-700',
+            border:'border-l-blue-500',
+            label: 'Infomation',
+            symbol:'info'
+        }
+    };
+
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const cfg = toastConfig[type] || toastConfig.info;
+
+        const toast = document.createElement('div');
+        toast.className = `toast-enter relative flex items-start gap-3 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 border-l-4 ${cfg.border} p-4 overflow-hidden`;
+
+        toast.innerHTML = `
+            <div class="w-9 h-9 rounded-full ${cfg.icon} flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">${cfg.symbol}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold ${cfg.title} dark:text-slate-100">${cfg.label}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">${message}</p>
+            </div>
+            <button onclick="closeToast(this)" class="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                <span class="material-symbols-outlined text-base">close</span>
+            </button>
+            <div class="toast-progress-bar absolute bottom-0 left-0 h-[3px] w-full ${cfg.bar} rounded-full"></div>
+        `;
+
+        container.appendChild(toast);
+
+        // Auto close after 5s
+        const timer = setTimeout(() => closeToast(toast.querySelector('button')), 5000);
+        toast._timer = timer;
+    }
+
+    function closeToast(btn) {
+        const toast = btn.closest ? btn.closest('[class*="toast-enter"]') ?? btn : btn;
+        if (toast._timer) clearTimeout(toast._timer);
+        toast.classList.remove('toast-enter');
+        toast.classList.add('toast-leave');
+        setTimeout(() => toast.remove(), 300);
+    }
+
+        @if (TempData["ToastMessage"] != null)
+        {
+            <text>
+            document.addEventListener("DOMContentLoaded", function () {
+                showToast("@Html.Raw(TempData["ToastMessage"])", "@TempData["ToastType"]");
+            });
+            </text>
+        }
+
+    // ── Theme Toggle Logic ──────────────────────────────────────
+    document.addEventListener("DOMContentLoaded", function () {
+        var themeToggleIcon = document.getElementById('theme-toggle-icon');
+
+        // Change the icon inside the button based on previous settings
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            themeToggleIcon.textContent = 'light_mode';
+        } else {
+            themeToggleIcon.textContent = 'dark_mode';
+        }
+
+        var themeToggleBtn = document.getElementById('theme-toggle');
+
+        themeToggleBtn.addEventListener('click', function() {
+            // if set via local storage previously
+            if (localStorage.getItem('theme')) {
+                if (localStorage.getItem('theme') === 'light') {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                    themeToggleIcon.textContent = 'light_mode';
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                    themeToggleIcon.textContent = 'dark_mode';
+                }
+            // if NOT set via local storage previously
+            } else {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                    themeToggleIcon.textContent = 'dark_mode';
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                    themeToggleIcon.textContent = 'light_mode';
+                }
+            }
+        });
+    });
+</script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
